@@ -1,1 +1,52 @@
-qwe
+--------------------------------------------------------------------------------
+README : LiBiNorm
+--------------------------------------------------------------------------------
+
+LiBiNorm has been designed to perform gene expression analysis using RNA-seq data. 
+It is command line and output compatible with htseq-count and also includes RNA-seq 
+bias compensation tailored to library preparation as described in the paper: 
+Modeling enzyme processivity reveals that RNA-Seq libraries are biased in 
+characteristic and correctable ways
+http://www.cell.com/cell-systems/fulltext/S2405-4712(16)30331-3
+
+I.   Learn More
+
+II.  License
+
+III. Acknowledgements
+
+IV.  Contact
+
+--------------------------------------------------------------------------------
+I. Learn More:
+--------------------------------------------------------------------------------
+
+Installation steps, tutorial, documentation, etc. are all now available at
+
+http://www2.warwick.ac.uk/fac/sci/lifesci/research/libinorm
+
+--------------------------------------------------------------------------------
+II. License :
+--------------------------------------------------------------------------------
+
+The LiBiNorm code is released under the MIT License.
+Copyright (c) 2017 Nigel Dyer
+
+See included file LICENSE for details.
+
+--------------------------------------------------------------------------------
+III. Acknowledgements :
+--------------------------------------------------------------------------------
+
+ * Derek Barnett, Marth Lab, Biology Dept., Boston College for the bamtools API that is
+     incorportated into the code
+
+--------------------------------------------------------------------------------
+IV. Contact :
+--------------------------------------------------------------------------------
+
+Nigel Dyer
+School of Life Sciences, University of Warwick
+
+Email: nigel.dyer@warwick.ac.uk
+http://www2.warwick.ac.uk/fac/sci/lifesci/research/libinorm
