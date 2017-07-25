@@ -1,1 +1,210 @@
-12
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{4728390F-4F60-4904-B088-C8385524BB02}</ProjectGuid>
+    <RootNamespace>api</RootNamespace>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>11.0.60610.1</_ProjectFileVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <OutDir>$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir>$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <IntDir>$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" />
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;..\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;ZLIB_WINAPI;STATIC_LINK;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>.;..\..\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;STATIC_LINK;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;..\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;ZLIB_WINAPI;STATIC_LINK;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>.;..\..\zlib;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;STATIC_LINK;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="api\BamAlignment.cpp" />
+    <ClCompile Include="api\internal\io\BamDeviceFactory_p.cpp" />
+    <ClCompile Include="api\internal\io\BgzfStream_p.cpp" />
+    <ClCompile Include="api\internal\utils\BamException_p.cpp" />
+    <ClCompile Include="api\internal\io\BamFile_p.cpp" />
+    <ClCompile Include="api\internal\io\BamFtp_p.cpp" />
+    <ClCompile Include="api\internal\bam\BamHeader_p.cpp" />
+    <ClCompile Include="api\internal\io\BamHttp_p.cpp" />
+    <ClCompile Include="api\internal\index\BamIndexFactory_p.cpp" />
+    <ClCompile Include="api\BamMultiReader.cpp" />
+    <ClCompile Include="api\internal\bam\BamMultiReader_p.cpp" />
+    <ClCompile Include="api\internal\io\BamPipe_p.cpp" />
+    <ClCompile Include="api\internal\bam\BamRandomAccessController_p.cpp" />
+    <ClCompile Include="api\BamReader.cpp" />
+    <ClCompile Include="api\internal\bam\BamReader_p.cpp" />
+    <ClCompile Include="api\internal\index\BamStandardIndex_p.cpp" />
+    <ClCompile Include="api\internal\index\BamToolsIndex_p.cpp" />
+    <ClCompile Include="api\BamWriter.cpp" />
+    <ClCompile Include="api\internal\bam\BamWriter_p.cpp" />
+    <ClCompile Include="api\internal\io\ByteArray_p.cpp" />
+    <ClCompile Include="api\internal\io\HostAddress_p.cpp" />
+    <ClCompile Include="api\internal\io\HostInfo_p.cpp" />
+    <ClCompile Include="api\internal\io\HttpHeader_p.cpp" />
+    <ClCompile Include="api\internal\io\ILocalIODevice_p.cpp" />
+    <ClCompile Include="api\internal\io\RollingBuffer_p.cpp" />
+    <ClCompile Include="api\internal\sam\SamFormatParser_p.cpp" />
+    <ClCompile Include="api\internal\sam\SamFormatPrinter_p.cpp" />
+    <ClCompile Include="api\SamHeader.cpp" />
+    <ClCompile Include="api\internal\sam\SamHeaderValidator_p.cpp" />
+    <ClCompile Include="api\SamProgram.cpp" />
+    <ClCompile Include="api\SamProgramChain.cpp" />
+    <ClCompile Include="api\SamReadGroup.cpp" />
+    <ClCompile Include="api\SamReadGroupDictionary.cpp" />
+    <ClCompile Include="api\SamSequence.cpp" />
+    <ClCompile Include="api\SamSequenceDictionary.cpp" />
+    <ClCompile Include="api\internal\io\TcpSocket_p.cpp" />
+    <ClCompile Include="api\internal\io\TcpSocketEngine_p.cpp" />
+    <ClCompile Include="api\internal\io\TcpSocketEngine_unix_p.cpp" />
+    <ClCompile Include="toolkit\bamtools_sort.cpp" />
+    <ClCompile Include="utils\bamtools_options.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="api\api_global.h" />
+    <ClInclude Include="api\BamAlignment.h" />
+    <ClInclude Include="api\BamIndex.h" />
+    <ClInclude Include="api\internal\io\BamDeviceFactory_p.h" />
+    <ClInclude Include="api\internal\io\NetWin_p.h" />
+    <ClInclude Include="api\internal\utils\BamException_p.h" />
+    <ClInclude Include="api\internal\io\BamFile_p.h" />
+    <ClInclude Include="api\internal\io\BamFtp_p.h" />
+    <ClInclude Include="api\internal\bam\BamHeader_p.h" />
+    <ClInclude Include="api\internal\io\BamHttp_p.h" />
+    <ClInclude Include="api\internal\index\BamIndexFactory_p.h" />
+    <ClInclude Include="api\BamMultiReader.h" />
+    <ClInclude Include="api\internal\bam\BamMultiReader_p.h" />
+    <ClInclude Include="api\internal\io\BamPipe_p.h" />
+    <ClInclude Include="api\internal\bam\BamRandomAccessController_p.h" />
+    <ClInclude Include="api\BamReader.h" />
+    <ClInclude Include="api\internal\bam\BamReader_p.h" />
+    <ClInclude Include="api\internal\index\BamStandardIndex_p.h" />
+    <ClInclude Include="api\internal\index\BamToolsIndex_p.h" />
+    <ClInclude Include="api\BamWriter.h" />
+    <ClInclude Include="api\internal\bam\BamWriter_p.h" />
+    <ClInclude Include="api\internal\io\BgzfStream_p.h" />
+    <ClInclude Include="api\internal\io\ByteArray_p.h" />
+    <ClInclude Include="api\internal\io\HostAddress_p.h" />
+    <ClInclude Include="api\internal\io\HostInfo_p.h" />
+    <ClInclude Include="api\internal\io\HttpHeader_p.h" />
+    <ClInclude Include="api\IBamIODevice.h" />
+    <ClInclude Include="api\internal\io\ILocalIODevice_p.h" />
+    <ClInclude Include="api\internal\io\RollingBuffer_p.h" />
+    <ClInclude Include="api\internal\sam\SamFormatParser_p.h" />
+    <ClInclude Include="api\internal\sam\SamFormatPrinter_p.h" />
+    <ClInclude Include="api\SamHeader.h" />
+    <ClInclude Include="api\internal\sam\SamHeaderValidator_p.h" />
+    <ClInclude Include="api\internal\sam\SamHeaderVersion_p.h" />
+    <ClInclude Include="api\SamProgram.h" />
+    <ClInclude Include="api\SamProgramChain.h" />
+    <ClInclude Include="api\SamReadGroup.h" />
+    <ClInclude Include="api\SamReadGroupDictionary.h" />
+    <ClInclude Include="api\SamSequence.h" />
+    <ClInclude Include="api\SamSequenceDictionary.h" />
+    <ClInclude Include="api\internal\io\TcpSocket_p.h" />
+    <ClInclude Include="api\internal\io\TcpSocketEngine_p.h" />
+    <ClInclude Include="shared\bamtools_global.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\zlib\zlib.vcxproj">
+      <Project>{c1b5c97e-4ef4-4797-bce6-ffb430504b84}</Project>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
