@@ -1,0 +1,49 @@
+#
+# sub-project zlib
+#
+
+project zlib
+	: requirements
+		<include>.
+		<include>third_party
+		<toolset>msvc:<define>_CRT_SECURE_NO_WARNINGS
+		<toolset>msvc:<define>WIN32
+		<toolset>msvc:<define>STATIC_LINK
+		<toolset>msvc:<cflags>-wd4101
+		<toolset>gcc:<cflags>-w
+		<toolset>darwin:<cflags>-w
+		<toolset>darwin:<cxxflags>-Wno-unused
+		<link>static
+	: usage-requirements
+	;
+
+
+LIB_SOURCES =
+             adler32
+             compress
+             crc32
+             deflate
+             gzio
+             infback
+             inffast
+             inflate
+             inftrees
+             trees
+             uncompr
+             zutil
+	;
+
+
+# A library called 'zlib'
+lib ZLIB
+	: # sources
+		$(LIB_SOURCES).c
+	: # requirements
+		<include>.
+		<toolset>darwin:<link>static
+	: # default-build
+	: # usage-requirements
+	;
+	
+		
+
