@@ -1,1 +1,30 @@
-README
+--------------------------------------------------------------------------------
+README : bioinformaticsLib
+--------------------------------------------------------------------------------
+
+bioinformaticsLib is a collection of support functions that have been developed over the
+years for incorporation into a variety of different bioinformatics software.  They are
+designed so that they can be compiled using gcc or the Microsoft Visual C++ compiler
+
+I.  License
+
+II.  Contact
+
+--------------------------------------------------------------------------------
+I. License :
+--------------------------------------------------------------------------------
+
+The bioinformaticsLib code is released under the MIT License.
+Copyright (c) 2017 Nigel Dyer
+
+See included file LICENSE for details.
+
+--------------------------------------------------------------------------------
+II. Contact :
+--------------------------------------------------------------------------------
+
+Nigel Dyer
+School of Life Sciences, University of Warwick
+
+Email: nigel.dyer@warwick.ac.uk
+http://www2.warwick.ac.uk/fac/sci/lifesci/research/libinorm
