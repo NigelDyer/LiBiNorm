@@ -31,9 +31,6 @@
     <ClCompile Include="deflate.c">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="example.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="gzio.c">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -47,9 +44,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="inftrees.c">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="minigzip.c">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="trees.c">
