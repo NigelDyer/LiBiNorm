@@ -11,9 +11,11 @@
 #define MCMC_H
 
 #include "params.h"
-#include "nelderMeadOptimiser.h"
 
 /*
+	Set of options for parameter estimation.   The ssfun and priorFun methods are used both 
+	for the initial Nelder Mead stage of the optimisation and also mcmc stage
+
 % options structure
 %    options.ssfun    -2*log(likelihood) function
 %    options.sigma2   initial error variance
@@ -25,8 +27,12 @@ class optionsType
 public:	
 	optionsType():nsimu(3){};
 
+	//	Sum of squares error function given a set of parameters
 	double(*ssfun)(const dataVec & param, const mcmcGeneData & data);
-	double(*priorfun)(const dataVec &, const paramSet &);
+	//	Prior given a set of parameters
+	double(*priorfun)(const dataVec &, const paramDescriptionSet &);
+
+	//	mcmc related values
 	double sigma2;
 	size_t nsimu,Nruns;
 	double jumpSize;
@@ -38,11 +44,11 @@ public:
 class mcmc
 {
 public:
-	void mcmcrun(const mcmcGeneData & data,const paramSet & params,const optionsType & options);
-	
-	double priorfun(const dataVec & th, const dataVec & mu, const dataVec & sig);
+	void mcmcrun(const mcmcGeneData & data,const paramDescriptionSet & params,const optionsType & options);
 
+	//	The chain of parameter values generated during the mcmc run
 	std::vector<dataVec> _chain;
+	//	And the associated sum of squares errors
 	dataVec _sschain;
 };
 

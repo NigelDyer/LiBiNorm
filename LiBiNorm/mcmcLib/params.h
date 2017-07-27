@@ -30,22 +30,25 @@ public:
 	dataVec geneFrequencies;
 };
 
-
-class paramType
+//	For each of the parameters being determined this holds the name, the allowed range and the initial value
+//	  The range information is used by the prior function to dissuade the mcmc chain from going out of range
+//    This is used both by the Nelder Mead stage and also the mcmc stage of the parameter estimation process
+class paramDescription
 {
 public:
-	paramType(std::string name, double min = MIN_DOUBLE, double max = MAX_DOUBLE, double initial = 0);
+	paramDescription(std::string name, double min = MIN_DOUBLE, double max = MAX_DOUBLE, double initial = 0);
 	std::string name;
 	double min, max, value,initial;
 	bool targetflag, localflag;
 };
 
-class paramSet :public std::vector<paramType>
+//	The set of all the parameter descriptions
+class paramDescriptionSet :public std::vector<paramDescription>
 {
 public:
-	paramSet() {};
+	paramDescriptionSet() {};
 	//	This = operator allows the values to be assigned using an aggregate initiailiser for the base class
-	paramSet & operator = (std::vector<paramType>(a)) { std::vector<paramType>::operator = (a); return *this; };
+	paramDescriptionSet & operator = (std::vector<paramDescription>(a)) { std::vector<paramDescription>::operator = (a); return *this; };
 
 	bool isValid(const dataVec & data) const;
 	void setValues(const dataVec & vals);
