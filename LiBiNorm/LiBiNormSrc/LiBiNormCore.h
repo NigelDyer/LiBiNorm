@@ -22,8 +22,7 @@
 typedef size_t mcmcRunId;
 
 
-//	The class that contains common functionality for LiBiNorm count. model and variation
-
+//	LiBiNormCore contains common functionality for LiBiNorm count. model and variation
 class LiBiNormCore
 {
 public:

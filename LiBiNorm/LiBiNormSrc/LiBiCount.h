@@ -6,6 +6,7 @@
 // ---------------------------------------------------------------------------
 // The top level code associated with "LiBiNorm count" modes
 // ***************************************************************************
+
 #ifndef LIBICOUNT_H
 #define LIBICOUNT_H
 
@@ -81,7 +82,7 @@ private:
 	} bamOutMode;
 	RefVector references;
 
-	//	Config data for reading the ba, file
+	//	Config data for reading the bam file
 	bool useStrand, reverseStrand, nameOrder,landscapeFile;
 	mode countMode;
 	int minqual;

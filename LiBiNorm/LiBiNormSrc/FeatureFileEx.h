@@ -107,19 +107,21 @@ public:
 };
 
 //
-//	The featureFile class does the basic parsing of a gtf or gff class.  This extends this to 
+//	The featureFile class does the basic parsing of a gtf or gff class.  featureFileEx extends this to 
 //	provide the specific information required for identifying reads with genes in LiBiNorm count
 class featureFileEx : public featureFile
 {
 public: 
+	//  Create an index of the features once they have been read from a file
 	void index(GeneCountData & geneCounts,bool useStrand);
+	//	Print feature data and counts to a file
 	bool outputChromData(const std::string & filename, const GeneCountData & geneCounts);
 
 	//	A container of all the consolidated feature regions
 	genomeFeatureRegions genomeGtfData; 
 	//	A map of the ends of the feature regions.   Used for finding overlaps
 	genomeEndIndexMap genomeEndIndex;
-	//	A map of the regions associated with a gene, indexed by the name of the gene (which could be a transcript)
+	//	A map of the regions associated with a gene, indexed by the unique identifier of the gene (which could be a transcript)
 	std::map<std::string,geneData> genes;
 };
 

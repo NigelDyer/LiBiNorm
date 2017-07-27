@@ -9,6 +9,7 @@
 
 #ifndef LIBIOPTIMISER_H
 #define LIBIOPTIMISER_H
+
 #include "nelderMeadOptimiser.h"
 #include "ModelData.h"
 #include "mcmc.h"
@@ -25,18 +26,21 @@ public:
 
 	dataVec getParams(modelType m,optionsType & options,dataVec & initialValues);
 
-
+	//	Generates the error/liklyhood/sum of squares for the current model + paraneter values
 	virtual ErrorPair ErrorFunc();
+	//	Can be used to print results to screen/file during the process.  Currently ignored
 	virtual void SaveResults(bool toFile) {};
 
 	int iterations;
+
+	//	
 	optionsType * opts;
 	const mcmcGeneData & geneData;
 	const modelType currentModel;
 
 private:
 	optiDataType allOptiData;
-	paramSet params;
+	paramDescriptionSet params;
 
 };
 

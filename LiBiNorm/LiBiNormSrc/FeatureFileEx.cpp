@@ -9,9 +9,10 @@
 // ***************************************************************************#include "Options.h"
 #include "FeatureFileEx.h"
 
-
 using namespace std;
 
+// Check to see if the feature overlaps a region as defined by a segment.  If it does then add the
+//	information to the overlap list.  A strict overlap is when the feature fully overlaps the segment
 void featureRegion::checkOverlap(const region & segment,vector<featureOverlap> & overlapList) const
 {
 	rna_pos_type RNAstartPos = max<long>(segment.start - start + RNAstart,0);
@@ -37,6 +38,8 @@ void featureRegion::checkOverlap(const region & segment,vector<featureOverlap> &
 	}
 }
 
+//	Two constructors.   The first is an R-value copy constructor for efficiency, and the second constructs a feature region
+//	from the associated values
 featureRegion::featureRegion(featureRegion && gtf) : start(gtf.start), finish(gtf.finish), RNAstart(gtf.RNAstart), name(std::move(gtf.name)), type(std::move(gtf.type)),
 bioType(std::move(gtf.bioType)), strand(gtf.strand), overlaps(gtf.overlaps)
 {};
@@ -60,7 +63,6 @@ void featureFileEx::index(GeneCountData & geneCounts, bool useStrand)
 			//	First get rid of entries associated with genes that we are not interested in 
 			for (featureFile::featureMap::Iterator i = chrom.data().begin(); i != chrom.data().end();)
 			{
-
 
 				string prefix(i.feature().name.substr(0, i.feature().name.find('.')));
 				readPositionDataClass::Iterator j = geneCounts.readPositionData.lower_bound(prefix);
@@ -200,6 +202,8 @@ void featureFileEx::index(GeneCountData & geneCounts, bool useStrand)
 	geneCounts.addErrorEntry(notAlignedString);
 	geneCounts.addErrorEntry(notUnique);
 }
+
+//	Prints a list of all the features, ordered by chromosome and then 
 
 bool featureFileEx::outputChromData(const string & filename, const GeneCountData & geneCounts)
 {

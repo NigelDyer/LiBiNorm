@@ -191,7 +191,7 @@ void LiBiNormCore::mcmcThread(optionsType options)
 		}
 		setSSfun(options, currentModel);
 
-		paramSet params = GetModelParams(currentModel, &initialValues[currentModel], options.jumpSize);
+		paramDescriptionSet params = GetModelParams(currentModel, &initialValues[currentModel], options.jumpSize);
 		options.qcov = dataVec(params.size(), options.jumpSize);
 
 		mcmc mcmcEngine;

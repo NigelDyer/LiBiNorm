@@ -31,7 +31,7 @@ string prefix(const string & s)
 	return s.substr(0, s.find('.'));
 }
 
-
+//	This function is only available if LIBITOOLS is defined in Options.h
 int LiBiTools::landMain(int argc, char **argv)
 {
 	stringEx land_filename1, land_filename2, gff_filename, bamFileName;
@@ -254,6 +254,7 @@ int LiBiTools::landMain(int argc, char **argv)
 
 }
 
+//	This function is only available if LIBITOOLS is defined in Options.h
 int LiBiTools::landMain2(int argc, char **argv)
 {
 	stringEx landFilename, geneFilename;
@@ -344,7 +345,7 @@ int LiBiTools::landMain2(int argc, char **argv)
 
 }
 
-
+//	This function is only available if LIBITOOLS is defined in Options.h
 int LiBiTools::geneMain(int argc, char **argv)
 {
 	stringEx fastq_filename;

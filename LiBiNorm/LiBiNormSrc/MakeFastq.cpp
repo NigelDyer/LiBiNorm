@@ -4,7 +4,7 @@
 // ---------------------------------------------------------------------------
 // Last modified: 24 July 2017
 // ---------------------------------------------------------------------------
-// For making Fastq FIles from BamFiles
+// For making Fastq Files with various optional artefacts from BamFiles
 // ***************************************************************************
 
 #include <random>
@@ -60,7 +60,7 @@ void bamRead::setValues(const bamRead & br)
 	qualData= br.qualData;
 }
 
-
+//	Add a SNP by setting a random position in the read to the value at another random position
 void bamRead::addSNP(double errorRate)
 {
 	double randVal = distribution(generator);
@@ -73,7 +73,7 @@ void bamRead::addSNP(double errorRate)
 	readSeq[p1] = readSeq[p2];
 }
 
-
+//	Output a line of fastq data
 void bamRead::output(FILE * f)
 {
 	fprintf(f,"@%s\n%s\n+\n%s\n",name.c_str(),readSeq.c_str(),qualData.c_str());
@@ -85,6 +85,7 @@ void bamReadCache::clear()
 		i.resetNames();
 }
 
+//	Get next alignment.  If we reach the end then go back to the beginning
 inline bool GNA(BamAlignment & ba,BamReader & br)
 {
 	//	Returns false if we read the end and have to rewind (oe some other fault occurs), otherwise true;
@@ -127,7 +128,9 @@ void MakeFastq::incrementCount()
 		cerr << "Record " << count << endl;
 }
 
-
+//
+//	Not really part of LiBiNorm but ended up being incorporated as an option
+//	This can be used to generate fastq files from BAM files with additional artefacts
 int MakeFastq::main(int argc, char **argv)
 {
 

@@ -24,8 +24,8 @@ readData::readData(BamTools::BamAlignment && ba) :
 	cigar(move(ba.CigarData))
 {
 	//	This simulates line 155 in count py.  If there is no optional NH field in the first read
-	//	then the pythin throws an error, which we simulate by setting NH to zero
-	if (!ba.GetTag("NH", NH))
+	//	then the python code throws an error, which we simulate by setting NH to zero
+	if (!ba.GetTag("NH", (unsigned short &)NH))
 		NH = ba.IsFirstMate() ? 0 : -1;
 	if (ba.IsPaired())
 	{
@@ -45,8 +45,8 @@ readData::readData(const BamTools::BamAlignment & ba) :
 	cigar(ba.CigarData)
 {
 	//	This simulates line 155 in count py.  If there is no optional NH field in the first read
-	//	then the pythin throws an error, which we simulate by setting NH to zero
-	if (!ba.GetTag("NH", NH))
+	//	then the python code throws an error, which we simulate by setting NH to zero
+	if (!ba.GetTag("NH", (unsigned short&)NH))
 		NH = ba.IsFirstMate() ? 0 : -1;
 	if (ba.IsPaired())
 		strand = (ba.IsReverseStrand() == ba.IsFirstMate()) ? '-' : '+';

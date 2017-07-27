@@ -12,6 +12,8 @@
 
 using namespace std;
 
+//
+//	This function is only available if LIBITOOLS is defined in Options.h
 int LiBiVariation::main(int argc, char **argv)
 {
 	stringEx landscapeFilename;
@@ -42,7 +44,7 @@ int LiBiVariation::main(int argc, char **argv)
 		else if ((strcmp(argv[ni], "-e") == 0) || (opt2 = (strncmp(argv[ni], "--seed=", 7) == 0)))
 		{
 			int seed = atoi(opt2 ? argv[ni] + 7 : argv[++ni]);
-			intRand.reseed(seed);
+			intRandClass::instance().reseed(seed);
 		}
 		else
 		{
@@ -96,7 +98,7 @@ int LiBiVariation::main(int argc, char **argv)
 
 	optionsType options;
 
-	map<modelType, paramSet> params;
+	map<modelType, paramDescriptionSet> params;
 	for (modelType m : allModels())
 		params[m] = GetModelParams(m);
 

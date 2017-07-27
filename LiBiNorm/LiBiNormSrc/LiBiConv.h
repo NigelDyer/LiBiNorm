@@ -9,6 +9,7 @@
 
 #ifndef LIBICONV_H
 #define LIBICONV_H
+
 class LiBiConv
 {
 public:

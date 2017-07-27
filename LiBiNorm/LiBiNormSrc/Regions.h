@@ -29,13 +29,13 @@ public:
 class readData
 {
 	public:
-		readData(void) {}
+		readData(void):NH(0),qual(0),refId(0),position(0) {}
 		readData(BamTools::BamAlignment && ba);
 		readData(const BamTools::BamAlignment & ba);
 
 		int refId, position;
 		char strand;
-		int NH, qual;
+		short NH, qual;
 		Cigar cigar;
 };
 

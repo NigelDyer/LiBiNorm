@@ -58,10 +58,10 @@ inline void parseval(const char * start, modelType & value, size_t & len)
 
 
 //  Returns mcmc paremetyers associated with a model
-paramSet GetModelParams(modelType model,dataVec * defaults = 0,VEC_DATA_TYPE offset = 0);
+paramDescriptionSet GetModelParams(modelType model,dataVec * defaults = 0,VEC_DATA_TYPE offset = 0);
 
-//	The set of headers associated with the model parameters, extracted from the data provided 
-//	by GetModelParams
+//	getHeaders returns the set of headers associated with the model parameters, extracted from the data provided 
+//	by GetModelParams.  Used when printing results
 typedef std::map<modelType, std::vector<std::string> > headerType;
 headerType getHeaders();
 
@@ -97,7 +97,7 @@ double FLL_ModelBD(const dataVec & param, const mcmcGeneData & data);
 
 
 // Common prior function
-double priorFunc(const dataVec & data, const paramSet & params);
-double priorFuncE(const dataVec & data, const paramSet & params);
+double priorFunc(const dataVec & data, const paramDescriptionSet & params);
+double priorFuncE(const dataVec & data, const paramDescriptionSet & params);
 #endif
 

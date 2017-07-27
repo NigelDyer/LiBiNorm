@@ -22,6 +22,8 @@
 
 using namespace std;
 
+//	The top level 'main' routine.  This looks for the mode (count,model etc) and then creates an instance of the 
+//	associated class and calls its 'main' routine, passing all but the initial mode parameter
 int main(int argc, char **argv)
 {
 #ifdef _WIN32
@@ -30,6 +32,7 @@ int main(int argc, char **argv)
 
 	if ((argc == 1) || ((argc == 2) && ((strcmp(argv[1], "-h") == 0) || (strcmp(argv[1], "--help") == 0))))
 	{
+		//	No mode or help option produces a list of the modes
 		printf("Usage: LiBiNorm <command> [options]\n");	
 		printf("Commands:\n");	
 		printf("     count            htseq-count replacement with optional bias correction\n");
@@ -187,7 +190,7 @@ int LiBiNorm::main(int argc, char **argv)
 		else if ((strcmp(argv[ni], "-y") == 0) || (opt2 = (strncmp(argv[ni], "--seed=", 7) == 0)))
 		{
 			int seed = atoi(opt2 ? argv[ni] + 7 : argv[++ni]);
-			intRand.reseed(seed);
+			intRandClass::instance().reseed(seed);
 		}
 #endif
 #ifdef USE_NELDER_MEAD_FOR_INITIAL_VALUES
@@ -241,6 +244,7 @@ int LiBiNorm::main(int argc, char **argv)
 
 	getBias(theModel, bestResults[theModel].params[logValue], geneCounts.lengths[0], geneCounts.bias);
 
+	//	If a file root was specified then output the detailed output files
 	if (outputFileroot)
 	{
 		string filename = outputFileroot.replaceSuffix("_expression.txt");
@@ -251,9 +255,7 @@ int LiBiNorm::main(int argc, char **argv)
 		printBias();
 	}
 
-	//********************************************************************************************
-	//	This prints out all of the data for the full set of mcmc runs for each model
-
+	//	Optional print out of all of the data for the full set of mcmc runs for each model
 #ifdef PRINT_MCMC_RUN_DATA
 	printAllMcmcRunData();
 	printConsolidatedMcmcRunData();

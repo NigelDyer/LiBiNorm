@@ -7,6 +7,7 @@
 // For removing duplicate entries in BamFiles
 //	This mode is enabled using #define DEDUP_MODE in Options.h
 // ***************************************************************************
+
 #include "LiBiDedup.h"
 #include <stdlib.h>
 #include "api/BamReader.h"

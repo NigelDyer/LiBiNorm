@@ -6,23 +6,16 @@
 // ---------------------------------------------------------------------------
 // For processing count information associated with genes
 // ***************************************************************************
+
 #ifndef GENE_COUNT_DATA_H
 #define GENE_COUNT_DATA_H
 
-#include <map>
 #include <random>
 #include "containerEx.h"
 
 #include "parser.h"
 #include "mcmc.h"
 
-
-struct geneListFilenameData
-{
-	geneListFilenameData() :start(0), finish(10000000) {};
-	std::string geneListFilename;
-	int start, finish;
-};
 
 //
 //	Used to generate random integers between 0 and max.  This does not use the C++ 
@@ -31,7 +24,7 @@ struct geneListFilenameData
 //	is needed for comparison testing
 class intRandClass
 {
-public:
+private:
 	intRandClass() 
 	{
 #ifdef SELECT_READS_SEED
@@ -42,21 +35,28 @@ public:
 		gen.seed(seed);
 	};
 
+public:
+	//	A single instance is used for generating random numbers
+	static intRandClass & instance()
+	{
+		static intRandClass instance;
+		return instance;
+	}
+	//	Use simple modulus function to generate a number between 0 and max-1
 	unsigned int value(unsigned int max) { return gen() % max; };
+	
+	//	Set a specific seed
 	void reseed(unsigned int value) {
 		seed = value;  
 		gen.seed(seed);
 	};
-	unsigned int theSeed() { return seed; };
 
 private:
 	unsigned int seed;
+	//	C++11 random number generators
 	std::random_device rd;
 	std::mt19937 gen;
-	std::uniform_int_distribution<> dis;
 };
-
-extern intRandClass intRand;
 
 typedef long rna_pos_type;
 
@@ -70,16 +70,18 @@ static std::string notAlignedString = "__not_aligned";
 static std::string notUnique = "__alignment_not_unique";
 
 //
-//	The rnaPosVec class holds the set of rna positions associated with one strand direction of a gene
+//	The rnaPosVec class holds the set of rna fragment positions associated with one strand direction of a gene
 class rnaPosVec : public std::vector<rna_pos_type>
 {
 public:
+	//	Remove values outside the range of the annotated transcript.
 	rnaPosVec & removeInvalidValues(rna_pos_type maxVal);
 
-	//	Test code takes the first N samples rather than randomly picks samples, with the compile option 
-	//	of using the same as the MATLAB code for code validation.   
+	//	Select a subset of the rna fragment positions
 	void selectAtMost(size_t s);
 };
+
+
 //
 //	Allows the printTsv library class to print a vector of positions
 inline bool printVal(outputDataFile * f, const rnaPosVec value)
@@ -87,15 +89,15 @@ inline bool printVal(outputDataFile * f, const rnaPosVec value)
 	return printVal(f, (const std::vector<rna_pos_type>)value);
 };
 
-//	Holds the read position information associated with a specific gene.
-class geneReadData 
+//	Holds the rna-seq read position information associated with a specific gene/transcript.
+class rnaSeqPositionData 
 {
 public:
-	geneReadData(size_t index = 0) :index(index) {};
+	rnaSeqPositionData(size_t index = 0) :index(index) {};
 
 	//	Used by the copy constructor in GeneCountData::addEntry.  Provides a more efficient way of copying the
 	//	position vectors as they are just about to be discarded
-	geneReadData(size_t index, rnaPosVec && posPos, rnaPosVec && negPos) :	index(index)
+	rnaSeqPositionData(size_t index, rnaPosVec && posPos, rnaPosVec && negPos) :	index(index)
 	{
 		swap(posPos, positions[0]);
 		swap(negPos, positions[1]);
@@ -109,13 +111,12 @@ public:
 	//	Index to the position where the associated name length and count information is held for this gene
 	size_t index;
 
-	//	and their locations
+	//	The read positions themselves.  Index 0 for forward reads, 1 for reverse reads
 	rnaPosVec positions[2];
 };
 
 //	This class holds and processes all of the count information associated with the set of genes
 //	or transcripts
-
 class countInfo
 {
 public:
@@ -127,12 +128,22 @@ public:
 	std::string name;
 };
 
-class readPositionDataClass : public std::map<const stringEx, geneReadData >
+//	Hold all of the read position data in a map indexed by the gene name
+class readPositionDataClass : public std::map<const stringEx, rnaSeqPositionData >
 {
 public:
 	ADD_ITER(readGeneName, readGeneAttributes)
 };
 
+
+
+
+struct geneListFilenameData
+{
+geneListFilenameData() :start(0), finish(10000000) {};
+std::string geneListFilename;
+int start, finish;
+};
 
 
 class GeneCountData

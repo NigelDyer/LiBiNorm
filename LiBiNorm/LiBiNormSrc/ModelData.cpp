@@ -14,7 +14,7 @@
 #include "Options.h"
 using namespace std;
 
-
+//	Sets the methods to be used for the liklihood (sum of squares) and prior functions
 void setSSfun(optionsType & options,modelType m)
 {
 	switch (m)
@@ -50,9 +50,6 @@ void setSSfun(optionsType & options,modelType m)
 }
 
 
-/*
-	Support functions of the modelType enumerated values
-*/
 
 //	Returns a list of all the models, which is used to iterate through the list
 const std::vector<modelType> & allModels()
@@ -95,7 +92,8 @@ ostream& operator<< (ostream &out, const modelType & m)
 	return out;
 }
 
-//  Selects a model based on a string, exits if the string is not valid
+//  Selects a model based on a string, exits if the string is not valid.  Used, for example, when 
+//	parsing the command line
 modelType modelFromString(const string & desc)
 {
 	static map<string, modelType> mappings{
@@ -118,7 +116,7 @@ bool printVal(outputDataFile * f, modelType m)
 	return true;
 };
 
-
+//	udentifier, min max and initial value for each of the parameters
 #define PARAM_D { "d", -1, 2, -0.5 }
 #define PARAM_H { "h", 0, 3, 1.5 }
 #define PARAM_T1 { "t1", -5, -1, -3 } 
@@ -128,9 +126,9 @@ bool printVal(outputDataFile * f, modelType m)
 
 //	Loads the paremeter information associated with each of the models and sets the value to a random value within the allowed
 //	range for the parameter. 
-paramSet GetModelParams(modelType model,dataVec * defaults, VEC_DATA_TYPE offset)
+paramDescriptionSet GetModelParams(modelType model,dataVec * defaults, VEC_DATA_TYPE offset)
 {
-	paramSet params;
+	paramDescriptionSet params;
 
 	switch (model)
 	{
@@ -185,12 +183,13 @@ paramSet GetModelParams(modelType model,dataVec * defaults, VEC_DATA_TYPE offset
 	return params;
 }
 
+//	Returns the list of the headers using the data returned from GetModelParams
 headerType getHeaders()
 {
 	headerType _retVal;
 	for (modelType m : allModels())
 	{
-		paramSet params = GetModelParams(m);
+		paramDescriptionSet params = GetModelParams(m);
 		for (auto i : params)
 			_retVal[m].push_back(i.name);
 	}
@@ -208,7 +207,7 @@ headerType getHeaders()
 	it turns out to be of use in the future
 */
 
-double priorFunc(const dataVec & data, const paramSet & params)
+double priorFunc(const dataVec & data, const paramDescriptionSet & params)
 {
 	VEC_DATA_TYPE _retVal = 0;
 	for (size_t i = 0; i < params.size(); i++)
@@ -252,7 +251,7 @@ double priorFunc(const dataVec & data, const paramSet & params)
 	and then linearly beyond that
 */
 
-double priorFuncE(const dataVec & data, const paramSet & params)
+double priorFuncE(const dataVec & data, const paramDescriptionSet & params)
 {
 	VEC_DATA_TYPE _retVal = priorFunc(data, params);
 #ifdef E_H_PRIOR_MULTIPLIER
