@@ -3,6 +3,7 @@
 // Marth Lab, Department of Biology, Boston College
 // ---------------------------------------------------------------------------
 // Last modified: 8 December 2011 (DB)
+//                24 July 2017 (ND)
 // ---------------------------------------------------------------------------
 // Provides common networking-related includes, etc. for Windows systems
 //
@@ -28,6 +29,8 @@
 
 #include <winsock2.h>  // <-- should bring 'windows.h' along with it
 #include <Ws2tcpip.h>
+
+//	The following definitions were added to allow building under Visual C++ for LiBiNorm
 #include <io.h>
 
 #define close _close
@@ -41,6 +44,8 @@
 #define	ETOOMANYREFS	59		/* Too many references: can't splice */
 
 #define	EHOSTDOWN	64		/* Host is down */
+//	End of Visual C++ additions
+
 #ifndef   BT_SOCKLEN_T
 #  define BT_SOCKLEN_T int
 #endif
