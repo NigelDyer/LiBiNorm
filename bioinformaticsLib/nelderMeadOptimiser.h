@@ -18,6 +18,10 @@
 #include "stringEx.h"
 #include "dataVec.h"
 
+//	Uncomment to add an adhoc tweak that was found to help a problem some years ago but 
+//	appears to degrade the performance of LiBiNorm 
+//#define NOISY_COMBINE
+
 
 inline VEC_DATA_TYPE sqr(VEC_DATA_TYPE a) { return a * a; };
 
@@ -46,6 +50,7 @@ public:
 struct optiVector : public std::vector<optiItem>
 {
 	optiVector(size_t i = 0, optiItem oi = optiItem()) :std::vector<optiItem>(i, oi) {};
+	//	Return true if any of the entries are currently being optimised
 	bool optimising()
 	{
 		for (size_t i = 0; i < size(); i++)
@@ -59,20 +64,19 @@ struct optiVector : public std::vector<optiItem>
 //	A set of such vectors
 typedef std::vector<optiVector *> optiDataType;
 
-/*	A class to contain both the error value representing the basic difference
-between the target and the model and the value that includes additional weightings
-to prevent negative coefficients etc.  Cast the duplet to the latter so that it
-is used with comparison operators during optimisation
-*/
+//	A class to contain both the error value representing the basic difference
+//	between the target and the model and the value that includes a prior, e.g.
+//	additional weightings to prevent negative coefficients etc.
 struct ErrorPair {
-	VEC_DATA_TYPE WithPrior;
-	VEC_DATA_TYPE NoWeightings;
+	VEC_DATA_TYPE WithPrior, NoWeightings;
 
 	ErrorPair(VEC_DATA_TYPE err = 0.0) :WithPrior(err), NoWeightings(err) {};
 	void operator = (const ErrorPair & val) {
 		WithPrior = val.WithPrior;
 		NoWeightings = val.NoWeightings;
 	};
+	//	Cast the duplet to the value with prior by default as this is the value
+	//	used during optimisation
 	operator VEC_DATA_TYPE() const { return WithPrior; };
 };
 
@@ -85,21 +89,25 @@ public:
 
 	//	Dont allow a copy constructor
 	optiVec(const optiVec & data) = delete;
+	//	But do allow an r-value constructor
 	optiVec(optiVec && data) { swap(data); };
 
-	//	The current error value associated with this set
+	//	For setting and returning the error value associated with this set of parameters
+	//	This returns the value with prior
 	ErrorPair Error() { return m_error; };
 	void SetError(ErrorPair error) { m_error = error; };
 
-	//	For accessing members
-	//	For setting
+	//	Some useful operators
 	optiVec & operator = (const optiVec & data);
 	optiVec & operator = (optiVec && data);
 	optiVec & operator += (const optiVec & data);
 	optiVec & operator -= (const optiVec & data);
 
-	//For combining
+#ifdef NOISY_COMBINE
+	// A noisy combination of two parameter vectors had previously appeared to be a useful addition
+	//	to the algorithm, but this is no longer being used
 	optiVec & noisyCombine(const optiVec & A, const optiVec & B, const optiVec & C);
+#endif
 
 private:
 	ErrorPair m_error;
@@ -115,10 +123,6 @@ inline std::ostream& operator<< (std::ostream &out, const optiVec & d)
 	return out;
 }
 
-//optiVec operator * (const optiVec & data, VEC_DATA_TYPE multiplier);
-//optiVec operator / (const optiVec & data, VEC_DATA_TYPE divider);
-//optiVec operator + (const optiVec & data1, const optiVec & data2);
-//optiVec operator - (const optiVec & data1, const optiVec & data2);
 
 class optiArray : public std::vector<optiVec>
 {
@@ -145,8 +149,10 @@ public:
 
 	void GetError(optiVec & data);
 
-	//	To be implemented by the class representing the data to be optimised
+	//	To be implemented by the class representing the data to be optimised.
+	//	This generates the error 
 	virtual ErrorPair ErrorFunc() = 0;
+	//	Can be used to print results to screen/file during the process.
 	virtual void SaveResults(bool toFile) = 0;
 
 	template <typename... Params>
@@ -154,10 +160,13 @@ public:
 
 protected:
 	std::string m_rootDir;
-	ErrorPair m_ErrLowest;
-	ErrorPair m_ErrLast;
 
+	//	The lowest error so far and the associated parameters
+	ErrorPair m_ErrLowest;
 	optiVec m_DataLowest;
+
+	//	The last error
+	ErrorPair m_ErrLast;
 
 public:
 	optiDataType * m_externalData;

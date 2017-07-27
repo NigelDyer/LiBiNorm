@@ -27,12 +27,15 @@ using namespace std;
 bool verbose = false;
 bool debugPrint = false;
 
-
+//
+//	A class which provides a temporary directory that is appropriate for the current platform
+//	  using the static function tempDirectory::theDirectory();
 string & tempDirectory::theDirectory()
 {
 	static string dir;
 	return dir;
 }
+
 string tempDirectory::get(string suggestion)
 {
 

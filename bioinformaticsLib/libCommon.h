@@ -10,17 +10,26 @@
 #ifndef LIBCOMMON_H
 #define LIBCOMMON_H
 
-
+//	Assorted debugging macros
 #ifdef _WIN32
 #ifdef _DEBUG
+   //  This ensures that the location where heap data was allocated is available
+	// in memory leakage reports
    #ifndef DBG_NEW
       #define DBG_NEW new ( _NORMAL_BLOCK , __FILE__ , __LINE__ )
       #define new DBG_NEW
    #endif
-#endif  // _DEBUG
+#endif 
 #else
 #define _ASSERT(A) 
 #define _ASSERT_EXPR(A,B)
+#endif
+
+//	An efficient way of encapsulating debug only code
+#ifdef _DEBUG
+#define _DBG(A) A
+#else
+#define _DBG(A)
 #endif
 
 #include <ctime>
@@ -30,6 +39,7 @@
 #include <math.h>
 #include "limits.h"
 
+//	Some microsoft specific function mapping
 #if defined(WIN32) || defined(_WIN32) 
 #ifndef strdup
 #define strdup(A) _strdup(A)
@@ -37,7 +47,11 @@
 #define strncasecmp(A,B,C) _strnicmp(A,B,C)
 #endif 
 
+//	Allows This.parameter instead of this->parameter
 #define This (*this)
+
+#define MAX_DOUBLE std::numeric_limits<double>::max()
+#define MIN_DOUBLE std::numeric_limits<double>::min()
 
 inline double log2(double _V) {
 	static double ln2 = log(2);
@@ -45,14 +59,8 @@ inline double log2(double _V) {
 
 }
 
-#ifdef _DEBUG
-#define _DBG(A) A
-#else
-#define _DBG(A)
-#endif
 
-
-//Allows optional progressMEssages to be output
+//Support for progress messages while code is running
 extern bool verbose;
 extern bool debugPrint;
 
@@ -60,9 +68,6 @@ inline void progMessage()
 {
 	std::cerr << std::endl;
 }
-
-#define MAX_DOUBLE std::numeric_limits<double>::max()
-#define MIN_DOUBLE std::numeric_limits<double>::min()
 
 template <typename First, typename... Rest>
 inline void progMessage(const First & first, const Rest& ... rest)
@@ -89,7 +94,7 @@ inline void debugMessage(const First & first, const Rest& ... rest)
 	progMessage(rest...);
 }
 
-
+//	Some standard ways of exiting. exitFail paremeters allows a message to be output prior to the exit
 inline void exitSuccess()
 {
 	exit(EXIT_SUCCESS);
@@ -112,7 +117,6 @@ inline void exitFail(const Params& ... params)
 
 
 //	For timings
-
 inline clock_t & startTime()
 {
 	static clock_t C;
@@ -133,6 +137,8 @@ inline void elapsedTime(const Rest& ... rest)
 	optMessage(rest...,": Elapsed time ",elapsed_secs," seconds");
 }
 
+
+//	A generic way of identifying a temporary directory
 class tempDirectory
 {
 	static std::string & theDirectory();

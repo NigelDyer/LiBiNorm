@@ -13,14 +13,7 @@
 #include "parser.h"
 #include "printEx.h"
 
-
 using namespace std;
-
-/******************************************
-
-featureFile
-
-***********************************************/
 
 std::map<std::string, unsigned char> entryTags::idMap ;
 std::vector<std::string> entryTags::revIdMap ;

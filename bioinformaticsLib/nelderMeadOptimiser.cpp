@@ -19,9 +19,6 @@
 //	Uncomment to create a progress file
 //#define SAVE_PROGRESS
 
-//	Uncomment to add an adhoc tweak that was found to help a problem some years ago but 
-//	appears to degrade the performance of LiBiNorm 
-//#ifdef NOISY_COMBINE
 
 #define  Al  1
 #define  Ga  2
@@ -30,6 +27,7 @@
 
 using namespace std;
 
+//	Indicate that all of the paramateres are being optimised
 void optiVector::setOptimising(bool mode)
 {
 	for (size_t i = 0; i < size(); i++)
@@ -130,6 +128,7 @@ optiVec operator - (const optiVec & data1, const optiVec & data2)
 	return dv;
 }
 
+#ifdef NOISY_COMBINE
 optiVec & optiVec::noisyCombine(const optiVec & A, const optiVec & B, const optiVec & C)
 {
 	//	Make the choice as to which one to use based on bits returned from
@@ -151,6 +150,7 @@ optiVec & optiVec::noisyCombine(const optiVec & A, const optiVec & B, const opti
 	}
 	return (*this);
 }
+#endif
 
 optiArray::optiArray(size_t size) : vector<optiVec>(size + 1)
 {
@@ -164,12 +164,8 @@ size_t optiArray::initialise(const optiDataType & data)
 
 	//	Setup the first vector in the array with the entries in the
 	//	input data that are to be optimised
-/*	for (size_t i = 0; i < data.size(); i++)
-	{
-		for (size_t j = 0; j < (*data[i]).size(); j++)
-			if (data.at(i) ->at(j).optimise)
-				at(0).push_back(data.at(i)->at(j).value);
-	}*/
+	//	The data forms a two dimensional array, so go through all the entries picking out the ones
+	//	that are set o be optimised
 	for (auto & i : data)
 	{
 		for (auto j : *i)
@@ -213,7 +209,10 @@ void nelderMeadOptimiser::loadExternalData(optiVec & data)
 	}
 }
 
-
+//
+//	The starting or restarting point for the nelder mead optimisation is N+1 vectors 
+//	which are an vector corresponding to the starting point for the optimisation
+//	and a set of vectors where each parameter in turn is changed by delta 
 void nelderMeadOptimiser::CreateAndScoreOrthogonalVectors(VEC_DATA_TYPE delta)
 {
 	size_t i;
@@ -283,6 +282,7 @@ void nelderMeadOptimiser::GetError(optiVec & data)
 #define SLOPE 0.05
 #define THRESHOLD 0.01
 
+//	The Nelder mead engine itself
 VEC_DATA_TYPE nelderMeadOptimiser::optimise(optiDataType & data, int maxIter, int outputEvery, 
 	VEC_DATA_TYPE delta, stringEx id)
 {
