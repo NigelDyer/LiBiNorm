@@ -3,6 +3,7 @@
 // Marth Lab, Department of Biology, Boston College
 // ---------------------------------------------------------------------------
 // Last modified: 4 December 2012 (DB)
+//                24 July 2017 (ND)
 // ---------------------------------------------------------------------------
 // Provides the BamAlignment data structure
 // ***************************************************************************
@@ -160,6 +161,11 @@ bool BamAlignment::BuildCharData(bool buildAlignBases) {
 
     // save query sequence
     QueryBases.clear();
+    Qualities.clear();
+    AlignedBases.clear();
+	if(buildAlignBases)
+	{
+
 		if ( hasSeqData ) {
 			const char* seqData = SupportData.AllCharData.data() + seqDataOffset;
 			QueryBases.reserve(SupportData.QuerySequenceLength);
@@ -171,7 +177,6 @@ bool BamAlignment::BuildCharData(bool buildAlignBases) {
 
 		// save qualities
 
-    Qualities.clear();
 		if ( hasQualData ) {
 			const char* qualData = SupportData.AllCharData.data() + qualDataOffset;
 
@@ -188,7 +193,6 @@ bool BamAlignment::BuildCharData(bool buildAlignBases) {
 		}
 
 		// clear previous AlignedBases
-    AlignedBases.clear();
 
 		// if QueryBases has data, build AlignedBases using CIGAR data
 		// otherwise, AlignedBases will remain empty (this case IS allowed)
@@ -247,6 +251,7 @@ bool BamAlignment::BuildCharData(bool buildAlignBases) {
 				}
 			}
 		}
+    }
 
     // save tag data
     TagData.clear();
