@@ -3,11 +3,13 @@
 // Marth Lab, Department of Biology, Boston College
 // ---------------------------------------------------------------------------
 // Last modified: 10 October 2011 (DB)
+//                24 July 2017 (ND)
 // ---------------------------------------------------------------------------
 // Provides the basic definitions for exporting & importing library symbols.
 // Also provides some platform-specific rules for definitions.
 // ***************************************************************************
 // Modified for LiBiNorm to allow build using Visual C++ and static linking of library
+//	using the new STATIC_LINK which should be #DEFINED
 // Nigel Dyer 24 July 2017
 // ***************************************************************************
 
