@@ -211,7 +211,7 @@ int LiBiNorm::main(int argc, char **argv)
 	landscapeFilename = argv[argc - 1];
 
 	//	If we specifiy the model then run the other models just once 
-	if (theModel == noModel)
+	if (theModel == noModelSpecified)
 		NrunsOtherModels = Nruns;
 	else
 		NrunsOtherModels = (Nruns ==1)?0:1;
@@ -231,7 +231,7 @@ int LiBiNorm::main(int argc, char **argv)
 	coreParameterEstimation();
 
 	//	If we have explicitly specified the model then use it instead
-	if ((theModel == noModel) || (theModel == findBestModel))
+	if ((theModel == noModelSpecified) || (theModel == findBestModel))
 	{
 		bestModel = getBestModel();
 		progMessage("Best model is ", bestModel);

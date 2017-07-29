@@ -434,7 +434,7 @@ bool LiBiNormCore::coreParameterEstimation()
 //	Find which model performed best based on the Log Liklihood
 modelType LiBiNormCore::getBestModel()
 {
-	modelType bestModel = noModel;
+	modelType bestModel = noModelSpecified;
 	double bestLL = MAX_DOUBLE;
 	for (modelType m : allModels())
 	{

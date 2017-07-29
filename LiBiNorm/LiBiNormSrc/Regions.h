@@ -14,6 +14,7 @@
 #include<string>
 #include "printEx.h"
 #include "api/BamReader.h"
+#include "Options.h"
 
 //	Wrap the cigar data so that the parser and printVal methods will recognise it
 class Cigar : public std::vector<BamTools::CigarOp>
@@ -29,11 +30,18 @@ public:
 class readData
 {
 	public:
-		readData(void):NH(0),qual(0),refId(0),position(0) {}
+		readData(void):NH(0),qual(0),refId(0),position(0) 
+#ifdef MATCH_USING_ONE_POSITION
+			,mateRefId(0), matePosition(0)
+#endif
+		{}
 		readData(BamTools::BamAlignment && ba);
 		readData(const BamTools::BamAlignment & ba);
 
 		int refId, position;
+#ifdef MATCH_USING_ONE_POSITION
+		int mateRefId, matePosition;
+#endif
 		char strand;
 		short NH, qual;
 		Cigar cigar;

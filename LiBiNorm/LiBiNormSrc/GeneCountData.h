@@ -69,6 +69,9 @@ static std::string lowQualString = "__too_low_aQual";
 static std::string notAlignedString = "__not_aligned";
 static std::string notUnique = "__alignment_not_unique";
 
+static std::string duplicateNonUnique = "__duplicateNonUnique";
+
+
 //
 //	The rnaPosVec class holds the set of rna fragment positions associated with one strand direction of a gene
 class rnaPosVec : public std::vector<rna_pos_type>

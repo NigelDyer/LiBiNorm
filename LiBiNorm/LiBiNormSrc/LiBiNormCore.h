@@ -45,7 +45,7 @@ protected:
 		nelderMead(false),
 		Nsimu(MCMC_ITERATIONS),
 #endif
-		theModel(noModel), bestModel(noModel),
+		theModel(noModelSpecified), bestModel(noModelSpecified),
 		maxReads(DEF_MAX_READS_FOR_PARAM_ESTIMATION),
 		maxGeneLength(DEF_LENGTH_OF_GENE_FOR_PARAM_ESTIMATION),
 		Nthreads(DEF_THREADS),

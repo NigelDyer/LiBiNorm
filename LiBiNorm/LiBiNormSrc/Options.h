@@ -2,7 +2,7 @@
 // Options.h (c) 2017 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 29 July 2017
 // ---------------------------------------------------------------------------
 // Top level code options
 // ***************************************************************************
@@ -11,7 +11,7 @@
 #define OPTIONS_H
 
 
-#define LIBINORM_VERSION "1.10.1"
+#define LIBINORM_VERSION "1.11.0"
 //	Bam/gff file reading
 #define DEFAULT_FEATURE_TYPE_EXON "exon" 
 #define DEFAULT_GTF_ID_ATTRIBUTE "gene_id"
@@ -25,6 +25,18 @@
 //	These are included in htseq_compatible mode
 #define IGNORED_GTF_TRANSCRIPT_TYPES  "retained_intron" 
 
+#ifdef _DEBUG
+//	Put reads into cache file when number of reads exceed READ_CACHE_SIZE
+#define READ_CACHE_SIZE 50000
+#else
+//	Put reads into cache file when number of reads exceed READ_CACHE_SIZE
+#define READ_CACHE_SIZE 2000000
+//#define READ_CACHE_SIZE 20000
+//#define READ_CACHE_SIZE 2000
+#endif
+
+//	Report progress every REP_LEN entries
+#define REP_LEN 100000
 
 //	Read selection for paremeter estimation
 #define DEF_MAX_READS_FOR_PARAM_ESTIMATION 100000000  // -d
@@ -91,9 +103,10 @@
 // #define DEDUP_MODE
 
 //	When matching forward and reverse reads the position information can also used to pair the reads
-//	disabling this causes no problems for many datasets, but in the DRR078784 dataset it caused a 170
-//	shortfall in the alignment not unique count for position ordered data
-// #define MATCH_USING_POSITION
+//	anabling this tends to worsen the mismatch between htseq-count and LiBinomrm, particularly when data is
+//	cached
+#define MATCH_USING_BOTH_POSITIONS
+//#define MATCH_USING_ONE_POSITION
 
 //  Output detailed results of interpreting the Feature file
 // #define OUTPUT_FEATURE_DATA

@@ -2,7 +2,7 @@
 // LiBiCount.h (c) 2017 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 29 July 2017
 // ---------------------------------------------------------------------------
 // The top level code associated with "LiBiNorm count" modes
 // ***************************************************************************
@@ -16,6 +16,8 @@
 
 using namespace BamTools;
 
+//	
+// #define DEBUG_OUT_FILE
 
 //	The htseq-count modes
 enum mode {
@@ -27,26 +29,41 @@ enum mode {
 };
 
 
-
 class LiBiCount : private LiBiNormCore
 {
+
+
+	struct returnedCacheData
+	{
+		returnedCacheData(const readData & data, int file,bool replace) :data(data), file(file),replace(replace) {};
+		readData data;
+		int file;
+		bool replace;
+	};
+
+	typedef std::multimap<std::string, returnedCacheData> readCacheClass;
+
 	//	Used for reading back cached read information from cache files
-	class cacheEntry
+	class cacheData : public std::multimap<std::string, readData>
 	{
 	public:
-		cacheEntry() : file(0) {};
-		~cacheEntry();
+		cacheData() : file(0) {};
+		~cacheData();
 
-		bool open(const std::string filename);
-		bool readNext();
+		void save(const stringEx & filename);
+			
+		bool open(const std::string filename,int filedId);
+		void readNext(readCacheClass & dataCache);
 		void close();
 
 		//	Holds the name of the read, which is not in the readData class
 		readData currentRead;
-		std::string name;
+		stringEx name;
 	private:
+		bool readNext();
 		std::string fname;
 		std::ifstream * file;
+		int fileId;
 	};
 
 
@@ -61,6 +78,7 @@ private:
 	bool processNameOrderedBamData();
 	bool processPositionOrderedBamData();
 	void processCachedReads(size_t cacheFileCount);
+
 
 	//Support functions for reading bam data
 	bool AReadIsMapped(const BamAlignment & ba);
@@ -82,11 +100,16 @@ private:
 	} bamOutMode;
 	RefVector references;
 
+#ifdef DEBUG_OUT_FILE
+	TsvFile debugOut;
+#endif
 	//	Config data for reading the bam file
-	bool useStrand, reverseStrand, nameOrder,landscapeFile;
+	bool useStrand, reverseStrand, nameOrder,landscapeFile, htSeqCompatible;
 	mode countMode;
 	int minqual;
 	size_t bamCounter, maxCacheSize;
+
+	setEx<std::string> nonUniqueReads;
 
 	//	Directory data for outputting results
 	stringEx tempDirectory;

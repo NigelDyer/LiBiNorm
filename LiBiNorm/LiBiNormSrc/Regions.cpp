@@ -2,7 +2,7 @@
 // Regions.cpp (c) 2017 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 29 July 2017
 // ---------------------------------------------------------------------------
 // For information relating to regions
 // ***************************************************************************
@@ -20,6 +20,11 @@ using namespace BamTools;
 readData::readData(BamTools::BamAlignment && ba) :
 	refId(ba.RefID),
 	position(ba.Position + 1),
+#ifdef MATCH_USING_ONE_POSITION
+	mateRefId(ba.MateRefID),
+	matePosition(ba.MatePosition),
+#endif
+
 	qual(ba.MapQuality),
 	cigar(move(ba.CigarData))
 {
@@ -41,6 +46,10 @@ readData::readData(BamTools::BamAlignment && ba) :
 readData::readData(const BamTools::BamAlignment & ba) :
 	refId(ba.RefID),
 	position(ba.Position + 1),
+#ifdef MATCH_USING_ONE_POSITION
+	mateRefId(ba.MateRefID),
+	matePosition(ba.MatePosition),
+#endif
 	qual(ba.MapQuality),
 	cigar(ba.CigarData)
 {
@@ -174,6 +183,7 @@ void regionLists::combine(const readData & read)
 //	Parse a text string and convert it into a cigar value.  Used when retrieving entries from cache files
 void parserInternal::parseval(const char *& start,Cigar & co,size_t & len)
 {
+	co.clear();
 	size_t i = 0;
 	while (i < len)
 	{
@@ -197,7 +207,11 @@ bool printVal(outputDataFile * f,const Cigar & cigar)
 //	printVal associated with the cigar above
 bool printVal(outputDataFile * f,const readData & read)
 {
-	f->printStart(read.refId,read.position,read.strand,read.cigar,read.NH,read.qual);
+	f->printStart(read.refId,read.position,
+#ifdef MATCH_USING_ONE_POSITION
+		read.mateRefId, read.matePosition,
+#endif
+		read.strand,read.cigar,read.NH,read.qual);
 	return true;
 };
 

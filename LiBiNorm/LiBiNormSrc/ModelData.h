@@ -29,8 +29,9 @@ enum modelType
 	ModelD = 3,
 	ModelE = 4,
 	ModelBD = 5,
-	noModel = 6,
-	findBestModel = 7
+	noModelSpecified = 6,
+	findBestModel = 7,
+	none = 8
 };
 
 //	A collection of all the models, allowing code to iterate through them

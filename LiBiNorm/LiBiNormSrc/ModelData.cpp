@@ -19,7 +19,7 @@ void setSSfun(optionsType & options,modelType m)
 {
 	switch (m)
 	{
-	case noModel: break;
+	case noModelSpecified: break;
 	case ModelA:
 		options.ssfun = &FLL_ModelA;
 		options.priorfun = &priorFunc;
@@ -64,7 +64,7 @@ string conv(const modelType m, bool removeGaps)
 	stringEx retVal;
 	switch (m)
 	{
-	case noModel: retVal = "No Model"; break;
+	case noModelSpecified: retVal = "No model specified"; break;
 	case ModelA: retVal = "Model A"; break;
 	case ModelB: retVal = "Model B"; break;
 	case ModelC: retVal = "Model C"; break;
@@ -72,6 +72,7 @@ string conv(const modelType m, bool removeGaps)
 	case ModelE: retVal = "Model E"; break;
 	case ModelBD: retVal = "Model BD"; break;
 	case findBestModel: retVal = "Best"; break;
+	case none: retVal = "None"; break;
 	}
 	if (removeGaps)
 		retVal.replace(" ", "");
@@ -101,8 +102,9 @@ modelType modelFromString(const string & desc)
 		{"a",ModelA },{"b",ModelB },{"c",ModelC },{"d",ModelD },{"e",ModelE },{"bd",ModelBD }, 
 		{ "PolyA",ModelD },{"polya",ModelD },{ "POLYA",ModelD },{ "polyA",ModelD },
 		{"random",ModelE},{ "RANDOM",ModelE },
-		{ "smart",ModelBD },{ "SMART",ModelBD },
-		{"best",findBestModel },{"BEST",findBestModel }
+		{ "smart",ModelBD },{ "SMART",ModelBD },{ "Smart",ModelBD },
+		{"best",findBestModel },{"BEST",findBestModel },{ "Best",findBestModel },
+		{"none",none},{"NONE",none},{ "None",none }
 	};
 	auto iter = mappings.find(desc);
 	if (iter == mappings.end())
@@ -132,7 +134,7 @@ paramDescriptionSet GetModelParams(modelType model,dataVec * defaults, VEC_DATA_
 
 	switch (model)
 	{
-	case noModel:
+	case noModelSpecified:
 		break;
 	case ModelB: case ModelD: case ModelE:
 		params = { PARAM_D   // average length of fragments
@@ -161,6 +163,7 @@ paramDescriptionSet GetModelParams(modelType model,dataVec * defaults, VEC_DATA_
 		};
 		break;
 	case findBestModel:
+	case none:
 		break;
 	};
 
@@ -676,7 +679,7 @@ void getBias(modelType m,dataVec & params,const dataVec & l, dataVec & bias)
 	double t1, t2, a;
 	switch (m)
 	{
-	case noModel:	//This should not happen
+	case noModelSpecified:	//This should not happen
 	case ModelA:
 		break;
 	case ModelB:
@@ -702,7 +705,7 @@ void getBias(modelType m,dataVec & params,const dataVec & l, dataVec & bias)
 
 	switch (m)
 	{
-	case noModel:
+	case noModelSpecified:
 		break;
 	case ModelA:
 		bias = (2 * h < l)*(l - 2 * h) + l / d;

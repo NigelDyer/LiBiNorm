@@ -2,7 +2,7 @@
 // LiBiCount.cpp (c) 2017 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 July 2017
 // ---------------------------------------------------------------------------
 // The top level code associated with "LiBiNorm count" modes
 // ***************************************************************************
@@ -30,15 +30,9 @@
 
 
 #ifdef _DEBUG
-//	Put reads into cache file when number of reads exceed READ_CACHE_SIZE
-#define READ_CACHE_SIZE 50000
-//	Report progress every REP_LEN entries
-#define REP_LEN 100000
-#define BAMNAME "DRR078784.4"
+//#define BAMNAME "DRR078784.108"
+#define BAMNAME "DRR078784.109810"
 bool dbgFound = false;
-#else
-#define READ_CACHE_SIZE 2000000
-#define REP_LEN 100000
 #endif
 
 #define MAX_MISMATCH_REPORT_COUNT 30
@@ -50,9 +44,6 @@ bool dbgFound = false;
 #endif
 
 using namespace std;
-
-bool htSeqCompatible = false;
-
 
 int LiBiCount::main(int argc, char **argv)
 {
@@ -66,6 +57,7 @@ int LiBiCount::main(int argc, char **argv)
 	verbose = true;
 	minqual = 10;
 	nameOrder = true;
+	htSeqCompatible = false;
 	maxCacheSize = READ_CACHE_SIZE;
 
 	if (argc < 1)
@@ -243,8 +235,8 @@ int LiBiCount::main(int argc, char **argv)
 
 	if (htSeqCompatible)
 	{
-		if (theModel != noModel)
-			progMessage("-n option has no function in htseq-compatible mode");
+		if ((theModel != noModelSpecified) && (theModel != none))
+			progMessage("In htseq-compatible mode -n option must either be absent or 'none'");
 		if (maxReads != DEF_MAX_READS_FOR_PARAM_ESTIMATION)
 			progMessage("-d option has no function in htseq-compatible mode");
 		if (parameterFilename)
@@ -258,9 +250,13 @@ int LiBiCount::main(int argc, char **argv)
 	{
 		NrunsOtherModels = Nruns;
 	}
-	else if (theModel == noModel)
+	else if (theModel == noModelSpecified)
 	{
 		theModel = DEFAULT_MODEL;
+	}
+	else if (theModel == none)
+	{
+		normalise = false;
 	}
 
 	if (countsFilename)
@@ -299,6 +295,9 @@ int LiBiCount::main(int argc, char **argv)
 	// retrieve 'metadata' from BAM files.
 	references = reader.GetReferenceData();
 
+#ifdef DEBUG_OUT_FILE
+	debugOut.open(bamFileName.replaceSuffix(".debug.txt"));
+#endif
 	if (bamOutFileName)
 	{
 		if (!writer.Open(bamOutFileName, reader.GetHeader(), reader.GetReferenceData()))
@@ -411,7 +410,7 @@ int LiBiCount::main(int argc, char **argv)
 
 		if (outputFileroot)
 		{
-			if ((theModel == noModel) || (theModel == findBestModel))
+			if ((theModel == noModelSpecified) || (theModel == findBestModel))
 			{
 				bestModel = getBestModel();
 				progMessage("Best model is ", bestModel);
@@ -480,11 +479,33 @@ struct chromosomeGeneInfo: public map<string,overlapCounts>
 	chromosomeGeneInfo():noMatch(0),nSegments(0){};
 };
 
-
+//	Adds the read to the count for the associated gene or to the 'non allocated' counts.
+//	Returns a string if the read is to be added to the bam file
 string LiBiCount::addRead(const regionLists & segments,const featureFileEx & gtfData)
 {
+
+	if (!htSeqCompatible)
+	{
+		if (nonUniqueReads.contains(segments.name))
+		{
+#ifdef DEBUG_OUT_FILE
+			debugOut.printEnd(segments.name,":", duplicateNonUnique);
+#endif
+			if ((bamOutMode == outputAll) || (bamOutMode == outputUnmatched))
+				return duplicateNonUnique;
+			else
+				return "";
+		}
+	}
+
 	if (segments.NH > 1)
 	{
+		if (!htSeqCompatible)
+			nonUniqueReads.add(segments.name);
+
+#ifdef DEBUG_OUT_FILE
+		debugOut.printEnd(segments.name);
+#endif
 		geneCounts.count(notUnique)++;
 		if ((bamOutMode == outputAll) || (bamOutMode == outputUnmatched))
 			return notUnique;
@@ -996,8 +1017,9 @@ bool LiBiCount::processNameOrderedBamData()
 	while (OK)
 	{
 		string & name = ba[0].Name;
-		_DBG(dbgFound = (name == BAMNAME);)
-
+#ifdef BAMNAME
+		dbgFound = (name == BAMNAME);
+#endif
 		int Nreads = 0;
 
 		//	Load up a all the reads with the same name, up to the size of the buffer
@@ -1094,35 +1116,29 @@ bool LiBiCount::processNameOrderedBamData()
 	return true;
 }
 
+//	A class for caching the reads for which we have not yet found a pair.  When it exceeds a certain size
+//	it gets saved to disk
+
+
 //	Position ordered bam data, which makes it more tricky to find the mates.  Unpaired mates have to be held in memory anc cached if necessary
 bool LiBiCount::processPositionOrderedBamData()
 {
+
+	cacheData readCache;
+
 	BamAlignment ba;
 
 	bamCounter = 0;
 	int cacheCounter = 0;
 
-	//	A class for caching the reads for which we have not yet found a pair.  When it exceeds a certain size
-	//	it gets saved to disk
-	class readCacheClass : public map<string,vector<readData> >
-	{
-	public:
-		void save(const stringEx & filename)
-		{
-			TsvFile outFile;
-			outFile.open(filename);
-			for (auto & i : This)
-				for (auto & j : i.second)
-					outFile.print(i.first,j);
-			clear();
-		}
-	} readCache;
 
 	bool OK = reader.GetNextAlignment(ba,false);
 
 	while (OK)
 	{
-		_DBG(dbgFound = (ba.Name == BAMNAME);)
+#ifdef BAMNAME
+		dbgFound = (ba.Name == BAMNAME);
+#endif
 
 		//	The NH handling is complex is that there may be one NH (with NH = 1) at one end, and multiple NHs (with NH > 1) at the other
 		//	The NH > 1 samples have to be used to either pair with the other, or to remove the NH = 1 sample 
@@ -1133,44 +1149,38 @@ bool LiBiCount::processPositionOrderedBamData()
 			{
 				//	Store reads in a cache so they can be paired up.
 				stringEx mateIndex(ba.Name, "_",
-#ifdef MATCH_USING_POSITION
+#if defined MATCH_USING_BOTH_POSITIONS || defined MATCH_USING_ONE_POSITION
 					ba.IsMateMapped() ? stringEx(ba.MateRefID, ba.MatePosition) : "0", "_",
+#endif
+#if defined MATCH_USING_BOTH_POSITIONS
 					ba.IsMapped() ? stringEx(ba.RefID, ba.Position) : "0", "_",
 #endif
 					(ba.IsMapped() && ba.IsMateMapped()) ? insertConv(-ba.InsertSize) : 0, "_",
 					ba.IsFirstMate() ? "S" : "F");
-				readCacheClass::iterator i = readCache.find(mateIndex);
+				cacheData::iterator i = readCache.find(mateIndex);
 				if (i == readCache.end())
 				{
 					stringEx thisIndex(ba.Name, "_",
-#ifdef MATCH_USING_POSITION
+#if defined MATCH_USING_BOTH_POSITIONS || defined MATCH_USING_ONE_POSITION
 						ba.IsMapped() ? stringEx(ba.RefID, ba.Position) : "0", "_",
+#endif
+#if defined MATCH_USING_BOTH_POSITIONS
 						ba.IsMateMapped() ? stringEx(ba.MateRefID, ba.MatePosition) : "0", "_",
 #endif
 						(ba.IsMapped() && ba.IsMateMapped()) ? insertConv(ba.InsertSize) : 0, "_",
 						ba.IsFirstMate() ? "F" : "S");
 
-					i = readCache.find(thisIndex);
-					if (i == readCache.end())
-					{
-						auto i = readCache.emplace(thisIndex, vector<readData>());
-						i.first->second.emplace_back(move(ba));
-					}
-					else
-						i->second.emplace_back(move(ba));
+					readCache.emplace(thisIndex, move(ba));
 				}
 				else
 				{
-					regionLists regions(i->second.front(), ba.Name);
+					regionLists regions(i->second, ba.Name);
 
 					regions.combine(move(ba));
 
 					addRead(regions, genomeDef);
 
-					if (i->second.size() > 1)
-						i->second.erase(i->second.begin());
-					else
-						readCache.erase(i);
+					readCache.erase(i);
 
 					incBamCounter(&ba, readCache.size());
 
@@ -1206,14 +1216,13 @@ bool LiBiCount::processPositionOrderedBamData()
 				dbgFound = (tags[0] == BAMNAME);
 				)
 
-			for (auto & j: i.second)
-			{
+			string name;
+			parser(i.first, "_", name);
 
-				regionLists rl(j,i.first);
-				addRead(rl,genomeDef);
+			regionLists rl(i.second,name);
+			addRead(rl,genomeDef);
 
-				incBamCounter(0,cacheReadCounts++);
-			}
+			incBamCounter(0,cacheReadCounts++);
 		}
 	}
 	else
@@ -1232,92 +1241,67 @@ bool LiBiCount::processPositionOrderedBamData()
 //	as a pair
 void LiBiCount::processCachedReads(size_t cacheFileCount)
 {
+	readCacheClass readCache;
 
-	vector<cacheEntry> cacheReads(cacheFileCount);
+	vector<cacheData> cacheFiles(cacheFileCount);
 
-	//	readIndex has a list of the current reads, ordered by name.
-	class readCache : public map<string,map<int,vector<readData> > > 
+	//	Open all of the cache read files in parallel and read the first entry from each
+	for (size_t i = 0; i < cacheFileCount; i++)
 	{
-	public:
-		void replace(iterator & i,vector<cacheEntry> & cacheReads)
-		{
-			int index = i->second.begin()->first;
-			vector<readData> & r = i->second.begin()->second;
-			if (r.size() > 1)
-				r.erase(r.begin());
-			else
-			{
-				map<int,vector<readData> > & s = i->second;
-				if (s.size() > 1)
-					s.erase(s.begin());
-				else
-					erase(i);
-			}
-
-			if(cacheReads[index].readNext())
-				This[cacheReads[index].name][index].emplace_back(cacheReads[index].currentRead);
-
-		}
-	} reads;
-
-	//	Open all of the cache read files in parallel
-	for (size_t i = 0;i < cacheFileCount;i++)
-	{
-		cacheReads[i].open(stringEx(tempDirectory,"file",i));
-		reads[cacheReads[i].name][i].emplace_back(cacheReads[i].currentRead);
-
-		//	and read the first 10 reads into memory 
-		for (int j = 0;(j < 10) && (cacheReads[i].readNext());j++)
-		{
-			reads[cacheReads[i].name][i].emplace_back(cacheReads[i].currentRead);
-		}
+		cacheFiles[i].open(stringEx(tempDirectory, "file", i),i);
+		cacheFiles[i].readNext(readCache);
 	}
 
-	int cacheReadCounter = 0;
-	while (reads.size())
+	while (readCache.size())
 	{
-		_DBG( dbgFound = (reads.begin()->first == BAMNAME);)
+		//	Find the 'lowest' BAM read name
+		readCacheClass::iterator i = readCache.begin();
+		vector<string> nameParts;
+		parser(i->first, "_", nameParts);
 
-		readCache::iterator i1 = reads.begin();
+#ifdef BAMNAME
+		dbgFound = (nameParts[0] == BAMNAME);
+#endif
 
-		size_t nameLen = i1->first.length();
-		if (nameLen == 0)
+		regionLists rl(i->second.data, nameParts[0]);
+
+		// and identify what its match would be
+#if defined MATCH_USING_BOTH_POSITIONS
+		stringEx searchName(nameParts[0], "_", nameParts[2],"_", nameParts[1],"_",nameParts[3], "_", (nameParts[4] == "F") ? "S" : "F");
+#elif defined MATCH_USING_ONE_POSITION
+		stringEx searchName(nameParts[0], "_", i->second.data.mateRefId,i->second.data.matePosition,"_",nameParts[2], "_", (nameParts[3] == "F") ? "S" : "F");
+#else
+		stringEx searchName(nameParts[0], "_", nameParts[1], "_", (nameParts[2] == "F") ? "S" : "F");
+#endif
+		readCacheClass::iterator j = readCache.find(searchName);
+		
+		if (j != readCache.end())
 		{
-			reads.erase(i1);
+			//	We have a matching pair of reads, combine them
+			rl.combine(j->second.data);
+			//	store the result
+			addRead(rl, genomeDef);
+			//	And then get the next read from the file that the second read was in
+			int fileId = j->second.file;
+			bool getNew = j->second.replace;
+			readCache.erase(j);
+			if (getNew)
+				cacheFiles[fileId].readNext(readCache);
 		}
 		else
 		{
-			string name = i1->first;
-			vector<string> nameParts;
-
-			parser(name,"_",nameParts);
-
-			name = stringEx(nameParts[0],
-#ifdef MATCH_USING_POSITION
-				"_",nameParts[2],"_",nameParts[1],"_",-atoi(nameParts[3].c_str()),"_",(nameParts[4] == "F")?"S":"F");
-#else
-				"_",-atoi(nameParts[1].c_str()),"_",(nameParts[2] == "F")?"S":"F");
-#endif
-
-			regionLists rl(i1->second.begin()->second[0],nameParts[0]);
-
-			readCache::iterator i2 = reads.find(name);
-			if (i2 != reads.end())
-			{
-				//	We have the two ends of a paired end read.  Combine them and calculate counts
-				rl.combine(i2->second.begin()->second[0]);
-				reads.replace(i2,cacheReads);
-			}
-
-			addRead(rl,genomeDef);
-			reads.replace(i1,cacheReads);
-
-			incBamCounter(0,++cacheReadCounter);
+			//	The lowest read is a singleton, so just process it.
+			addRead(rl, genomeDef);
 		}
+		//	And replace the first read from the next in the file that it came from
+		int fileId = i->second.file;
+		bool getNew = i->second.replace;
+		readCache.erase(i);
+		if (getNew)
+			cacheFiles[fileId].readNext(readCache);
 	}
-	
-	//	Closes all of the files and then deletes them
-	cacheReads.clear();
+
+	cacheFiles.clear();
 }
 
 
@@ -1432,40 +1416,92 @@ void LiBiCount::fileCompare(int argc, char **argv)
 	from the in memory cache until it reaches a certain size, when it is then written
 	to disk
 */
-
-LiBiCount::cacheEntry::~cacheEntry()
+LiBiCount::cacheData::~cacheData()
 {
 	close();
 };
 
-
-bool LiBiCount::cacheEntry::open(const std::string filename)
+void LiBiCount::cacheData::save(const stringEx & filename)
 {
+	TsvFile outFile;
+	outFile.open(filename);
+	for (auto & i : This)
+		outFile.print(i.first, i.second);
+	clear();
+};
+
+bool LiBiCount::cacheData::open(const std::string filename, int fId)
+{
+	fname = filename;
+	fileId = fId;
+
 	file = new std::ifstream();
 	file ->open(filename);
 	if (!file ->is_open()) return false;
-	fname = filename;
+
+	//	The code assumes that the next read has already been read from the file
 	readNext();
 	return true;
 }
-bool LiBiCount::cacheEntry::readNext()
+
+//	Gets the next bam record and loads it into 'currentRead'
+bool LiBiCount::cacheData::readNext()
 {
 	if (file->eof())
 		return false;
-	currentRead.cigar.clear();
-	std::string line;
-	getline(*file,line);
-	parseTsv(line,name, currentRead.refId, currentRead.position, currentRead.strand, 
-		currentRead.cigar, currentRead.NH, currentRead.qual);
+
+	stringEx line;
+
+	getline(*file, line);
+	parseTsv(line, name, currentRead.refId, currentRead.position,
+#ifdef MATCH_USING_ONE_POSITION
+		currentRead.mateRefId, currentRead.matePosition,
+#endif
+		currentRead.strand, currentRead.cigar, currentRead.NH, currentRead.qual);
 	return true;
+
 }
-void LiBiCount::cacheEntry::close()
+
+
+void LiBiCount::cacheData::readNext(readCacheClass & dataCache)
+{
+	//	Gets all of the reads associated with the same bam record and puts them into the in-memory cache
+	//	Only one of them is marked as requiring the next read to be performed when it is deleted
+	stringEx thisId, currentId;
+
+	//	If name is empty then we have reached the end of the file
+	while (name)
+	{
+		parser(name, "_", thisId);
+		if (!currentId)
+		{
+			currentId = thisId;
+			//	This is the read that will be replaced when it is finished with
+			dataCache.emplace(name, returnedCacheData(currentRead, fileId, true));
+			if (!readNext())
+				return;
+		}
+		else if (currentId == thisId)
+		{
+			//	These reads will not be replaced.
+			dataCache.emplace(name, returnedCacheData(currentRead, fileId, false));
+			if (!readNext())
+				return;
+		}
+		else
+		{
+			break;
+		}
+	}
+}
+void LiBiCount::cacheData::close()
 {
 	if (file)
 	{
 		file->close();
 		delete (file);
 		file = 0;
+		//	delete the file from disk
 		remove(fname.c_str());
 	}
 }
