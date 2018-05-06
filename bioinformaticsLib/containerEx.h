@@ -1,8 +1,8 @@
 // ***************************************************************************
-// ContainerEx.h (c) 2017 Nigel Dyer
+// ContainerEx.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 13 January 2018
 // ---------------------------------------------------------------------------
 // Various additions to the standard template library containers.
 //
@@ -20,6 +20,7 @@
 #include <set>
 #include <vector>
 #include <algorithm>
+#include <numeric>
 
 /*********************************************
 	MAKE_NAMED_PAIR: An extension for pair where a class _name is created where instead of using .first and .second to access the two parts
@@ -165,13 +166,21 @@ public:
 //	to strings
 template <typename _Ty,class _Alloc = std::allocator<_Ty> >  class setEx : public std::set<_Ty>
 {
-	void add()	{};		//Needed for when the add(...) method runs out of arguments
+	typedef std::set<_Ty> _set;
+//	void add()	{};		//Needed for when the add(...) method runs out of arguments
 public:
 	setEx(){};
 	//	Allows the initialisation of a set using an aggregate, e.g. setEx<string> a{{"hello","world"}};  
 	//	Also supports = operator, e.g. a = {{"good morning","world"}};
-	setEx(const std::set<_Ty> & _V) :std::set<_Ty>(_V) {};
+	setEx(const _set & _V) :_set(_V) {};
 
+	setEx & operator += (setEx<_Ty> a) {
+		_set::insert(a.begin(), a.end());
+		return *this;
+	};
+
+
+/*
 //	Add one or more things
 	template<typename... Rest> void add(const _Ty & value,const Rest & ... rest)	{
 		this->insert(value);
@@ -183,6 +192,7 @@ public:
 		this->insert(value.begin(),value.end());
 		add(rest...);
 	};
+*/
 
 /*	template<typename... Values> setEx(const _Ty & value,const Values & ... values) {
 		this->insert(value);
@@ -191,65 +201,77 @@ public:
 */
 	bool contains(const _Ty & value) const
 	{
-		return (this -> find(value) != this -> end());
+		return (_set::find(value) != _set::end());
 	}
 
 };
 
+template <typename _Ty, class _Alloc = std::allocator<_Ty> >  class multisetEx : public std::multiset<_Ty>
+{
+};
+
 //	Use a full definition so that the template parser class function that handles vectors will also handle vectorExs
+
+
 template <typename _Ty,class _Alloc = std::allocator<_Ty> >  class vectorEx : public std::vector<_Ty>
 {
 public:
+	typedef std::vector<_Ty> _vec;
+
 	vectorEx() {};
-	vectorEx(const size_t size) : std::vector<_Ty>(size) {};
-	vectorEx(const size_t size,const _Ty val) : std::vector<_Ty>(size,val) {};
+	vectorEx(const size_t size) : _vec(size) {};
+	vectorEx(const size_t size,const _Ty val) : _vec(size,val) {};
 	//	This allows a vectorEx to be constructed from a vector, and so also allows it
 	//	to be constructed from an aggregate, e.g. vectorEx<int> a{0,1,3}; or a = {{1,2,5}};
-	vectorEx(const std::vector<_Ty> & a) : std::vector<_Ty>(a) {};
+	vectorEx(const _vec & a) : _vec(a) {};
+	vectorEx(const std::initializer_list<_Ty> a) : _vec(a) {};
 
-	void add(const _Ty & first)	{
-		std::vector<_Ty>::emplace_back(first);
+
+//	Adds a vectorEx to the end of another vectorEx.  This can be done using an initialser list
+//	vectorEx<int> a({1,2,3}),b({4,5,6});
+//	a += b;
+//	a += {7,8,9};
+	vectorEx<_Ty> & operator += (const _vec & a) {
+		_vec::insert(_vec::end(), a.begin(), a.end());
+		return *this;
 	};
 
-	template<typename... Rest> void add(const _Ty & first,const Rest & ... rest)	{
-		std::vector<_Ty>::emplace_back(first);
-		add(rest...);
-	};
-
-/*	template<typename... Rest> vectorEx(const _Ty & first,const Rest & ... rest) {
-		add(first,rest ...);
-	};
-*/	
+	vectorEx<_Ty> & operator = (const vectorEx<_Ty> & _A)
+	{
+		_vec::operator = (_A);
+		return *this;
+	}
 	vectorEx<_Ty> operator / (const vectorEx<_Ty> & _A) const
 	{
-		size_t S = std::min( std::vector<_Ty>::size(),_A.size());
+		size_t S = std::min(_vec::size(),_A.size());
 		vectorEx<_Ty> _V(S);
 		for (size_t i = 0;i < S;i++)
-			_V[i] =  std::vector<_Ty>::at(i)/_A[i];
+			_V[i] = _vec::at(i)/_A[i];
 		return _V;
 	}
 
 	_Ty mean() const
 	{
-		_Ty _V = 0;
-		for (const _Ty & X : *this)
-			_V += X;
-		return _V/ std::vector<_Ty>::size();
+		return accumulate(_vec::begin(), _vec::end(), 0.0) / _vec::size();
 	}
 	size_t find (const _Ty & value) const 
 	{
-		for (size_t i = 0;i <  std::vector<_Ty>::size(); i++)
-			if ( std::vector<_Ty>::at(i) == value) 
-				return i;
+		for (const auto & i : *this)
+			if (i == value) return i;
 		return std::string::npos;
 	}
 	size_t contains (const _Ty & value) const 
 	{
-		for (size_t i = 0;i <  std::vector<_Ty>::size(); i++)
-			if ( std::vector<_Ty>::at(i) == value) 
-				return true;
+		for (const auto & i : *this)
+			if (i == value)	return true;
 		return false;
 	}
+	_Ty max() const
+	{
+		return *max_element(_vec::begin(), _vec::end());
+	}
+
+
 //	operator vector<_Ty> & () {return This;};
 
 /*	bool contains(const _Ty & value)

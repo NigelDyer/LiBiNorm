@@ -1,8 +1,8 @@
 // ***************************************************************************
-// fastaFile.cpp (c) 2017 Nigel Dyer
+// fastaFile.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 February 2018
 // ---------------------------------------------------------------------------
 // Some functions for processing fasta files
 // ***************************************************************************
@@ -10,7 +10,7 @@
 #include <math.h>
 #include <algorithm> 
 #include "printEx.h"
-#include "parser.h"
+#include "libParser.h"
 #include "fastaFile.h"
 
 using namespace std;

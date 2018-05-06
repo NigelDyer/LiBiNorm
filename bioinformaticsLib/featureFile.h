@@ -1,8 +1,8 @@
 // ***************************************************************************
-// featureFile.h (c) 2017 Nigel Dyer
+// featureFile.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 Feb 2018
 // ---------------------------------------------------------------------------
 // Functions for processing gtf and gff files
 // ***************************************************************************
@@ -16,6 +16,8 @@
 #include "containerEx.h"
 #include "genbankFile.h"
 
+//	A test mode for the read distribution calculations.
+// #define EXTEND_REGION 1000
 
 //	gtf format
 // 1	unprocessed_pseudogene	exon	16854	17055	. - .gene_id "ENSG00000227232"; transcript_id "ENST00000438504"; exon_number "7"; 
@@ -170,6 +172,7 @@ protected:
 	//	gff files index the entries by the chromsome ncbi identifier, so we have to
 	//	use the chromosome lengths to indentify the user friendly name
 	std::map<size_t, std::string> chromosomeMap;
+	std::set<std::string> chromosomeSet;
 
 	std::string filename;
 
@@ -179,9 +182,11 @@ protected:
 
 public:
 	//	Indicate which transcript types are to be ignored
-	void ignoreTranscriptTypes(setEx<std::string> types) { ignoredTranscriptTypes.add(types); };
+	void ignoreTranscriptTypes(setEx<std::string> types) { ignoredTranscriptTypes += types; };
 	//	Add to map between chromosome lengths and name
-	void addToChromosomeMap(size_t length, const std::string & name) { chromosomeMap.emplace(length, name); };
+	void addToChromosomeMap(size_t length, const std::string & name) { chromosomeMap.emplace(length, name); chromosomeSet.emplace(name); };
+
+	const std::map<size_t, std::string> & theChromosomeMap() const { return chromosomeMap; };
 
 	const std::map<std::string, featureMap> & entries(){ return entryMap;};
 

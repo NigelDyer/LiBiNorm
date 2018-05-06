@@ -2,7 +2,7 @@
 // nelderMeadOptimiser.h (c) 2017 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 11 August 2017
 // ---------------------------------------------------------------------------
 // An implementation of the NelderMead optimser.  This code is based on code 
 //  originally given to me in 1981 by John Cook at the British Telecom 
@@ -22,8 +22,6 @@
 //	appears to degrade the performance of LiBiNorm 
 //#define NOISY_COMBINE
 
-
-inline VEC_DATA_TYPE sqr(VEC_DATA_TYPE a) { return a * a; };
 
 //	Holds the information relating to an item to be optimised as a pair
 //	The 'first' item of the pair is the value being iptimised, and the second 
@@ -155,8 +153,37 @@ public:
 	//	Can be used to print results to screen/file during the process.
 	virtual void SaveResults(bool toFile) = 0;
 
+#define PROGRESS_FILENAME "progress.csv"
+
 	template <typename... Params>
-	void SaveProgress(const std::string &,const Params & ...params);
+	void SaveProgress(const std::string & id,const Params & ...params)
+	{
+#ifdef SAVE_PROGRESS
+		FILE * f = fopen((m_rootDir + PROGRESS_FILENAME).c_str(), "a");
+		if (f == 0)
+		{
+			optMessage("Failed to open ", PROGRESS_FILENAME);
+		}
+		else
+		{
+			fprintf(f, "%i,%f,%f", m_totalIterations, (status) ? m_ErrLowest.WithWeightings : m_ErrLast.WithWeightings,
+				(status) ? m_ErrLowest.NoWeightings : m_ErrLast.NoWeightings);
+			if (status)
+				fprintf(f, ",%s", status);
+			fprintf(f, "\n");
+
+			fclose(f);
+		}
+#else
+
+		char buffer[1000];
+		sprintf(buffer, ":%i - %12f, %12f, %12f", m_totalIterations, m_ErrLowest.WithPrior, Eps, m_ErrLowest.NoWeightings);
+		debugMessage(id, buffer, params...);
+
+#endif
+
+	}
+
 
 protected:
 	std::string m_rootDir;

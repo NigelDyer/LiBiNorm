@@ -1,8 +1,8 @@
 // ***************************************************************************
-// featureFile.cpp (c) 2017 Nigel Dyer
+// featureFile.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified:  14 April 2018
 // ---------------------------------------------------------------------------
 // Some functions for processing gtf and gff files
 // ***************************************************************************
@@ -10,14 +10,17 @@
 #include <fstream>
 #include "stringEx.h"
 #include "featureFile.h"
-#include "parser.h"
+#include "libParser.h"
 #include "printEx.h"
 
 using namespace std;
 
+#define USE_ONLY_THESE_ENTRIES {"ensembl_havana","ERCC"}
+
 std::map<std::string, unsigned char> entryTags::idMap ;
 std::vector<std::string> entryTags::revIdMap ;
 
+bool geneFound = false;
 
 string noSpaces(string S)
 {
@@ -207,6 +210,8 @@ void parseGffTags(fileEntry & fe, const char * start, size_t & len, const string
 
 		if (type1 == "gene_biotype")
 			fe.biotype = val1;
+		else if (type1 == "biotype")
+			fe.biotype = val1;
 		else if (type1 == "Dbxref")
 		{
 			const char * p = val1.c_str();
@@ -271,89 +276,101 @@ setEx<string> allowed = { { "protein_coding",
 //	Opens a gff or gtf format feature file.   
 bool featureFile::open(const stringEx & filename,const string & id_attribute,const string & feature_type, bool mapFile)
 {
-	size_t lineCounter(0);
-	ifstream file;
-	bool gffFile = false;
-	file.open(filename);
-	if (!file.is_open()) return false;
 
-	TsvFile mappedFile;
-	stringEx line,currChromosome;
-	_DBG(int count = 0;)
-	getline(file,line);
-	if (line.startsWith("##gff-version"))
+	bool usesBestRefSeq = false;
+	bool fileFinished = false;
+	do
 	{
-		if (mapFile)
+
+		size_t lineCounter(0);
+		ifstream file;
+		bool gffFile = false;
+		file.open(filename);
+		if (!file.is_open()) return false;
+
+		TsvFile mappedFile;
+		stringEx line;
+		_DBG(int count = 0;)
+			getline(file, line);
+		if ((line.startsWith("##gff-version")) || (filename.suffix() == "gff") || (filename.suffix() == "gff3"))
 		{
-			//	Mapped feature file is sent to stdout
-			mappedFile.open();
-			if (!mappedFile.is_open())
-				exitFail("Failed to open stdout for mapped feature file");
-			mappedFile.print(line);
-		}
-		gffFile = true;
-		getline(file, line);
-		//	Setup the parse and print methods that are specific to the feature file type
-		parseTags = parseGffTags;
-		printTags = printGffTags;
-	}
-	else
-	{
-		parseTags = parseGtfTags;
-		printTags = printGtfTags;
-	}
-
-	bool useChromosome = true;
-
-	map<string,string> geneTypes;
-	map<string, string> geneNames;
-
-	do {
-		if (line[0] == '#')
-		{
-			if (line.startsWith("#!"))
+			if (mapFile)
 			{
-				headers.push_back(line);
-				if (mapFile) mappedFile.print(line);
+				//	Mapped feature file is sent to stdout
+				mappedFile.open();
+				if (!mappedFile.is_open())
+					exitFail("Failed to open stdout for mapped feature file");
+				mappedFile.print(line);
 			}
-			else if (line.startsWith("##"))			//gff specific data
-			{
-				if (line.startsWith("##sequence-region"))
-				{
-					string params[2];
-					int start, finish;
-					parser(line, " \n\r", params, start, finish);
-
-					auto i = chromosomeMap.find(finish);
-					if (i != chromosomeMap.end())
-					{
-						useChromosome = true;
-						currChromosome = i->second;
-
-						optMessage(params[1]," maps to chromosome ",currChromosome);
-						if (mapFile) mappedFile.print(params[0],currChromosome,start,finish);
-					}
-					else
-					{
-						useChromosome = false;
-						progMessage("No mapping for chromsome ",params[1]);
-						currChromosome = params[1];
-					}
-				}
-				else if (mapFile) mappedFile.print(line);
-			}
-			else if (mapFile) mappedFile.print(line);
+			gffFile = true;
+			getline(file, line);
+			//	Setup the parse and print methods that are specific to the feature file type
+			parseTags = parseGffTags;
+			printTags = printGffTags;
 		}
 		else
 		{
-			if (useChromosome)
+			parseTags = parseGtfTags;
+			printTags = printGtfTags;
+		}
+
+		map<string, string> geneTypes;
+		map<string, string> geneNames;
+
+		map <string, string> chromosomeNameMap;
+
+		static vector<string> useTheseEntries(USE_ONLY_THESE_ENTRIES);
+
+		do {
+			if (line[0] == '#')
+			{
+				if (line.startsWith("#!"))
+				{
+					headers.push_back(line);
+					if (mapFile) mappedFile.print(line);
+				}
+				else if (line.startsWith("##"))			//gff specific data
+				{
+					if (line.startsWith("##sequence-region"))
+					{
+						string params[2];
+						int start, finish;
+						parser(line, " \n\r", params, start, finish);
+
+						auto i = chromosomeSet.find(params[1]);
+						if (i != chromosomeSet.end())
+						{
+							chromosomeNameMap.emplace(params[1], params[1]);
+						}
+						else
+						{
+
+							auto i = chromosomeMap.find(finish);
+							if (i != chromosomeMap.end())
+							{
+								chromosomeNameMap.emplace(params[1], i->second);
+
+								optMessage(params[1], " maps to chromosome ", i->second);
+								if (mapFile) mappedFile.print(params[0], i->second, start, finish);
+							}
+							else
+							{
+								progMessage("No mapping for chromsome ", params[1]);
+							}
+						}
+					}
+					else if (mapFile) mappedFile.print(line);
+				}
+				else if (mapFile) mappedFile.print(line);
+			}
+			else
 			{
 				if (mappedFile.is_open())
 				{
 					fileEntry gtf(line, parseTags);
-					if ((gtf.type != "region") && (gtf.source == "BestRefSeq"))
+					if ((gtf.type != "region") && (gtf.source.startsWith(useTheseEntries)))
 					{
-						gtf.chromosome = currChromosome;
+						gtf.chromosome = chromosomeNameMap[gtf.chromosome];
 						mappedFile.print(fileEntryForPrinting(gtf, printTags));
 					}
 				}
@@ -364,40 +381,62 @@ bool featureFile::open(const stringEx & filename,const string & id_attribute,con
 					if ((id_attribute.size()) || (feature_type.size()))
 					{
 						fileEntry fe(line, parseTags, id_attribute);
-						if (fe.type == "gene")
+
+						bool bestRefSeq = fe.source.startsWith(useTheseEntries);
+						if (bestRefSeq && !usesBestRefSeq)
 						{
-							if (!gffFile || fe.source.startsWith("BestRefSeq"))
+							//	If the file uses BestRefSeq then only use these genes
+							//	Restart the process with the new setting
+							usesBestRefSeq = true;
+							headers.clear();
+							goto tryAgain;
+						}
+						else if (fe.type == "gene")
+						{
+//							geneFound = (fe.name == "AL031282.2");
+							if (!usesBestRefSeq || bestRefSeq)
 							{
 								geneTypes[fe.id] = fe.biotype;
 								geneNames[fe.id] = fe.name;
 							}
+#ifdef EXTEND_REGION
+							fe.start = (EXTEND_REGION > fe.start)?0:fe.start- EXTEND_REGION;
+							fe.finish += EXTEND_REGION;
+#endif
 						}
-						else if (fe.type == feature_type)
+						if (fe.type == feature_type)
 						{
 							if (gffFile)
 							{
-								if (fe.source == "BestRefSeq")
+								if (!usesBestRefSeq || bestRefSeq)
 								{
-									fe.chromosome = currChromosome;
-									if (!fe.biotype)
-										fe.biotype = geneTypes[fe.id];
-									if (!fe.name)
-										fe.name = geneNames[fe.id];
-									//	Only save it if it has a name
-									if (fe.name)
-										addEntry(move(fe));
+									auto currChrom = chromosomeNameMap.find(fe.chromosome);
+									if (currChrom != chromosomeNameMap.end())
+									{
+										fe.chromosome = currChrom->second;
+										if (!fe.biotype)
+											fe.biotype = geneTypes[fe.id];
+										if (!fe.name)
+											fe.name = geneNames[fe.id];
+										//	Only save it if it has a name
+										if (fe.name)
+											addEntry(move(fe));
+									}
 								}
 							}
 							else
 							{
-								if (!ignoredTranscriptTypes.contains(fe.biotype))
+								if (!usesBestRefSeq || bestRefSeq)
 								{
-									if (strncasecmp(fe.chromosome.c_str(), "chr", 3) == 0)
-										fe.chromosome = fe.chromosome.substr(3);
-									//	Once we have used the transcript type, replace it with the gene type
-									fe.biotype = geneTypes[fe.id];
-									if (fe.name)
-										addEntry(move(fe));
+									if (!ignoredTranscriptTypes.contains(fe.biotype))
+									{
+										if (strncasecmp(fe.chromosome.c_str(), "chr", 3) == 0)
+											fe.chromosome = fe.chromosome.substr(3);
+										//	Once we have used the transcript type, replace it with the gene type
+										fe.biotype = geneTypes[fe.id];
+										if (fe.name)
+											addEntry(move(fe));
+									}
 								}
 							}
 						}
@@ -409,13 +448,16 @@ bool featureFile::open(const stringEx & filename,const string & id_attribute,con
 					}
 				}
 			}
-		}
-		if ((++lineCounter % 100000) == 0)
-			optMessage(lineCounter," Feature file lines processed.");
+			if ((++lineCounter % 100000) == 0)
+				optMessage(lineCounter, " Feature file lines processed.");
 
-	} while (getline(file,line) _DBG (&& (count++ < 100000000)));
-	optMessage(lineCounter," Feature file lines processed.");
-	file.close();
+		} while (getline(file, line) _DBG(&& (count++ < 100000000)));
+		fileFinished = true;
+		optMessage(lineCounter, " Feature file lines processed.");
+tryAgain:
+		file.close();
+	}
+	while (!fileFinished);
 	return true;
 }
 void featureFile::addGene(const string & chromosome,geneInfo & I)

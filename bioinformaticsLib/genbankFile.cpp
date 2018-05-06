@@ -1,10 +1,10 @@
 // ***************************************************************************
-// genbankFile.cpp (c) 2017 Nigel Dyer
+// genbankFile.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 February 2018
 // ---------------------------------------------------------------------------
-// Code for processing genbank files
+// Code for processing gff3 and gtf files
 // ***************************************************************************
 
 
@@ -12,7 +12,7 @@
 //	GenbankFile.h needs to be before parser.h so that the qualInt parseval can be seen and used by the gcc compiler.
 //	The Microsoft compiler can work out the connection in either order
 #include "genbankFile.h"
-#include "parser.h"
+#include "libParser.h"
 #include "stringEx.h"
 
 using namespace std;

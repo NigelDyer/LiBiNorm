@@ -1,8 +1,8 @@
 // ***************************************************************************
-// printEx.h (c) 2017 Nigel Dyer
+// printEx.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 27 March 2018
 // ---------------------------------------------------------------------------
 // For printing text files
 // ***************************************************************************
@@ -62,8 +62,6 @@ public:
 class outputDataFile : public outputFile
 {
 protected:
-	outputDataFile(const char * sep) : separator(sep),needSeparator(false){};
-
 	//	Used internally to print each item in the list, managing the printing of separators
 	void printInternal() {};
 
@@ -75,6 +73,8 @@ protected:
 		printInternal(rest...);
 	};
 public:
+	outputDataFile(const char * sep) : separator(sep), needSeparator(false) {};
+
 	void printSep(bool print = true)
 	{
 		if (separator && needSeparator && print)
@@ -82,34 +82,40 @@ public:
 		needSeparator = true;
 	}
 
-	template<typename intType>
-	void printRepeat(intType N,const char * s = "")
+	template<typename intType, typename Value>
+	void printRepeat(intType N,Value s)
 	{
 		for (intType i = 0; i < N; i++)
 			printInternal(s);
 	}
+	template<typename intType>
+	void printRepeat(intType N)
+	{
+		for (intType i = 0; i < N; i++)
+			printInternal("");
+	}
 
 	//	Use this if you want to print a part line starting from the beginning.
-	template<typename... Rest>
-	void printStart(const Rest & ... rest)
+	template<typename... Values>
+	void printStart(const Values & ... values)
 	{
 		needSeparator = false;
-		printInternal(rest...);
+		printInternal(values...);
 	};
 
 
 	//	Use this if you want to print a part line starting and finishing in the middle of a line.  You then need an 
 	//	explicit xx.print() for the line feed at the end.
-	template<typename... Rest>
-	void printMiddle(const Rest & ... rest)
+	template<typename... Values>
+	void printMiddle(const Values & ... values)
 	{
-		printInternal(rest...);
+		printInternal(values...);
 	};
-	template<typename... Rest>
+	template<typename... Values>
 
-	void printEnd(const Rest & ... rest)
+	void printEnd(const Values & ... values)
 	{
-		printInternal(rest...);
+		printInternal(values...);
 		print();
 	};
 
@@ -119,10 +125,11 @@ public:
 		fprintf(fout,"\n");
 	}
 
-template<typename... Rest>
-	void print(const Rest & ... rest)
+template<typename... Values>
+	void print(const Values & ... values)
 	{
-		printStart(rest...);
+		if (!is_open()) return;
+		printStart(values...);
 		print();
 	};
 
@@ -266,6 +273,16 @@ inline bool printVal(outputDataFile * f,const Container<_T,std::allocator<_T> > 
 	return sep;
 };
 
+/*
+template<class _Kty,class _Pr = less<_Kty>,	class _Alloc = allocator<_Kty> >
+inline bool printVal(outputDataFile * f, const _Tree<_Tset_traits<_Kty, _Pr, _Alloc, true> > & value)
+{
+
+}
+*/
+
+
+
 template <template <typename,typename> class Container, typename _T>
 inline bool printVal(outputDataFile * f,const fmtPrivate<Container<_T,std::allocator<_T> > > & value)
 {
@@ -301,6 +318,7 @@ parameters in a way that cannot be done with the class constructor.
 TsvFile f;
 f.open("filename");
 f.print(val1,blankZero(val2),val3...);
+f.print(val1,_Z(val2),val3...);
 
 */
 

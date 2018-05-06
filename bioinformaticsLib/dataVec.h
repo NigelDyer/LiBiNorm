@@ -1,8 +1,8 @@
 // ***************************************************************************
-// DataVec.h (c) 2017 Nigel Dyer
+// DataVec.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 March 2018
 // ---------------------------------------------------------------------------
 // A  vector of values with some standard operators defined
 // ***************************************************************************
@@ -23,16 +23,19 @@
 #define VEC_DATA_TYPE double
 #define RVALUE_CONSTRUCTORS
 
+inline VEC_DATA_TYPE sqr(VEC_DATA_TYPE a) { return a * a; };
+
 template <typename _Ty= VEC_DATA_TYPE, class _Alloc = std::allocator<_Ty> >
 class dataVec: public std::vector<_Ty>
 {
+	typedef std::vector<_Ty> _vec;
 public:
 
-	dataVec(const std::vector<_Ty> & a) :std::vector<_Ty>(a) {};
-	dataVec(size_t s = 0, _Ty v = 0) :std::vector<_Ty>(s,v){};
+	dataVec(const std::vector<_Ty> & a) :_vec(a) {};
+	dataVec(size_t s = 0, _Ty v = 0) : _vec(s,v){};
 //	dataVec(iterator start,iterator end) :std::vector<_Ty>(start, end) {};
 
-	dataVec(std::initializer_list<_Ty> a) : std::vector<_Ty>(a) {};
+	dataVec(std::initializer_list<_Ty> a) : _vec(a) {};
 
 //	dataVec(const std::vector<VEC_DATA_TYPE> & a);
 //	dataVec(const dataVec & a);
@@ -44,25 +47,36 @@ public:
 	}
 	*/
 	void resize(size_t s = 0);
+	void resize(size_t s,const _Ty value);
+	size_t size() const { return _vec::size(); };
+	_Ty & at(size_t i){ return _vec::at(i); };
+	const _Ty & at(size_t i) const { return _vec::at(i); };
 
 #ifdef RVALUE_CONSTRUCTORS
-	dataVec(const dataVec & a) : std::vector<_Ty>(a)
+	dataVec(const dataVec & a) : _vec(a)
 	{
 	};
 
-	dataVec(dataVec && a) : std::vector<_Ty>(move(a))
+	dataVec(dataVec && a) : _vec(move(a))
 	{
 	};
 
 	dataVec & operator = (dataVec && a)
 	{
-		std::vector<_Ty>::operator = (move(a));
+		_vec::operator = (move(a));
 		return This;
 	}
 	dataVec & operator = (const dataVec & a)
 	{
-		std::vector<_Ty>::operator = (a);
+		_vec::operator = (a);
 		return This;
+	}
+	dataVec & operator = (_Ty data)
+	{
+		for (size_t i = 0; i < size(); i++)
+			at(i) = data;
+//		m_error = 0;
+		return (*this);
 	}
 #endif
 
@@ -72,87 +86,95 @@ public:
 
 	dataVec operator > (_Ty a) const
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		dataVec retVal(s);
 		for (size_t i = 0; i < s;i++)
-			retVal.at(i) = std::vector<_Ty>::at(i)>a?1:0;
+			retVal.at(i) = _vec::at(i)>a?1:0;
 		return retVal;
 	}
 	dataVec operator < (const dataVec & a) const
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		dataVec retVal(s);
 		for (size_t i = 0; i < s;i++)
-			retVal.at(i) = std::vector<_Ty>::at(i)<a.at(i)?1:0;
+			retVal.at(i) = _vec::at(i)<a.at(i)?1:0;
 		return retVal;
 	}
 	dataVec operator < (dataVec && a) const
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		for (size_t i = 0; i < s;i++)
-			a.at(i) = std::vector<_Ty>::at(i)<a.at(i)?1:0;
+			a.at(i) = _vec::at(i)<a.at(i)?1:0;
 		return a;
+	}
+	dataVec operator < (_Ty a) const
+	{
+		size_t s = _vec::size();
+		dataVec retVal(s);
+		for (size_t i = 0; i < s; i++)
+			retVal.at(i) = _vec::at(i)<a ? 1 : 0;
+		return retVal;
 	}
 	dataVec operator * (const dataVec & a) const
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		dataVec retVal(s);
 		for (size_t i = 0; i < s;i++)
-			retVal.at(i) = std::vector<_Ty>::at(i) * a.at(i);
+			retVal.at(i) = _vec::at(i) * a.at(i);
 		return retVal;
 	}
 	dataVec operator * (dataVec && a) const
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		for (size_t i = 0; i < s;i++)
-			a.at(i) *= std::vector<_Ty>::at(i);
+			a.at(i) *= _vec::at(i);
 		return a;
 	}
 	dataVec operator / (const dataVec & a) const 
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		dataVec retVal(s);
 		for (size_t i = 0; i < s;i++)
-			retVal.at(i) = std::vector<_Ty>::at(i) / a.at(i);
+			retVal.at(i) = _vec::at(i) / a.at(i);
 		return retVal;
 	}
 	dataVec operator / (dataVec && a) const 
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		for (size_t i = 0; i < s;i++)
-			a.at(i) = std::vector<_Ty>::at(i) / a.at(i);
+			a.at(i) = _vec::at(i) / a.at(i);
 		return a;
 	}
 	dataVec operator + (const dataVec & a) const
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		dataVec retVal(s);
 		for (size_t i = 0; i < s;i++)
-			retVal.at(i) = std::vector<_Ty>::at(i) + a.at(i);
+			retVal.at(i) = _vec::at(i) + a.at(i);
 		return retVal;
 	}
 	dataVec operator + (dataVec && a) const
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		for (size_t i = 0; i < s;i++)
-			a.at(i) += std::vector<_Ty>::at(i);
+			a.at(i) += _vec::at(i);
 		return a;
 	}
 
 	dataVec operator - (const dataVec & a) const 
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		dataVec retVal(s);
 		for (size_t i = 0; i < s;i++)
-			retVal.at(i) = std::vector<_Ty>::at(i) - a.at(i);
+			retVal.at(i) = _vec::at(i) - a.at(i);
 		return retVal;
 	}
 	dataVec operator - () const
 	{
-		size_t s = std::vector<_Ty>::size();
+		size_t s = _vec::size();
 		dataVec retVal(s);
 		for (size_t i = 0; i < s;i++)
-			retVal.at(i) = -std::vector<_Ty>::at(i);
+			retVal.at(i) = -_vec::at(i);
 		return retVal;
 	}
 
@@ -167,14 +189,14 @@ public:
 	dataVec subset (int a,int b = -1) const
 	{
 		if (b == -1)
-			return std::vector<_Ty>(this->begin()+a, this->end());
+			return _vec(this->begin()+a, this->end());
 		else
-			return std::vector<_Ty>(this->begin() + a, this->begin() + a + b);
+			return _vec(this->begin() + a, this->begin() + a + b);
 	}
 
 	dataVec & append(const dataVec a)
 	{
-		insert(std::vector<_Ty>::end(), a.begin(), a.end());
+		insert(_vec::end(), a.begin(), a.end());
 		return This;
 	}
 
@@ -182,15 +204,15 @@ public:
 	dataVec & append(const std::vector< _Ty2> a,size_t size)
 	{
 		size_t addition = std::min(size, a.size());
-		size_t len = std::vector<_Ty>::size();
+		size_t len = _vec::size();
 		resize(len + addition);
 		for (size_t i = 0; i < addition; i++)
-			std::vector<_Ty>::at(len + i) = a.at(i);
+			_vec::at(len + i) = a.at(i);
 		return This;
 	}
 	dataVec & append(size_t N, _Ty value)
 	{
-		insert(std::vector<_Ty>::end(),N,value);
+		insert(_vec::end(),N,value);
 		return This;
 	}
 
@@ -198,23 +220,92 @@ public:
 
 	dataVec & clipMax(double maxVal);
 
+	void log()
+	{
+		size_t count = size();
+		for (size_t i = 0; i < count; i++)
+			at(i) = ::log(at(i));
+	}
+	void smooth(int N = 1)
+	{
+		size_t count = size();
+		for (int j = 0; j < N; j++)
+		{
+			for (size_t i = 1; i < (count - 1); i++)
+				at(i) = (at(i-1) + 2 * at(i) + at(i+1))/4;
+		}
+	}
+
+
+	_Ty sum()
+	{
+		_Ty tot = 0;
+		for (auto & i : This)
+			tot += i;
+		return tot;
+	}
+
+	void normalise()
+	{
+		This *= (size()/sum()) ;
+	}
+
+	_Ty average()
+	{
+		return sum()/size();
+	}
+	_Ty std_dev()
+	{
+		size_t count = size();
+		_Ty ave = average();
+
+		_Ty sigf = 0;
+		for (size_t i = 0; i < count; i++)
+		{
+			sigf += sqr(at(i) - ave);
+		}
+
+		sigf = sqrt(sigf / (count - 1));
+		return sigf;
+
+	}
+	_Ty info_content()
+	{
+		_Ty info = 0;
+		size_t count = size();
+		for (size_t i = 0; i < count; i++)
+		{
+			if (at(i) > 0)
+				info += at(i) * log2(at(i));
+		}
+		return info;
+	}
+
+
 	dataVec expand (const std::vector<int> & i) const
 	{
 		size_t s(i.size());
 		dataVec retVal(s);
 		for (size_t j = 0;j < s;j++)
-			retVal.at(j) = std::vector<_Ty>::at(i.at(j));
+			retVal.at(j) = _vec::at(i.at(j));
 		return retVal;
 	}
 	dataVec addNoise(double mean) const;
 };
 
+//	The dataVec template class has a default type of VEC_DATA_TYPE so dataVec<> is all that 
+//	is needed to use it with the default.   This #define removes the need for 
+//	the <> so we can forget that it is a template class in normal usage
 #define dataVec dataVec<>
 
+
+//	A two dimensiona array
 class dataArray : public std::vector<dataVec>
 {
 public:
+	//	For createing a square array of size s
 	dataArray(size_t s): std::vector<dataVec>(s,dataVec(s)){};
+	//	For creating an s*t rectangular array
 	dataArray(size_t s, size_t t) : std::vector<dataVec>(s, dataVec(t)) {};
 };
 
@@ -242,6 +333,8 @@ double exp1(double x) {
   return x;
 }
 */
+
+//	Lots of standard operators
 inline dataVec exp(dataVec && a)
 {
 	for (VEC_DATA_TYPE & i : a)
@@ -277,6 +370,13 @@ inline dataVec operator * (VEC_DATA_TYPE a, dataVec && b)
 		i *= a;
 	return b;
 }
+inline dataVec operator / (VEC_DATA_TYPE a, dataVec && b)
+{
+	for (size_t i = 0; i < b.size(); i++)
+		b[i] = a / b[i];
+	return b;
+}
+
 
 inline dataVec operator < (VEC_DATA_TYPE a, const dataVec & b)
 {
@@ -322,6 +422,20 @@ inline dataVec operator + (const dataVec & a ,VEC_DATA_TYPE b)
 	for (size_t i = 0; i < s;i++)
 		retVal.at(i) = a.at(i) + b;
 	return retVal;
+}
+inline dataVec operator + (VEC_DATA_TYPE b,const dataVec & a)
+{
+	size_t s(a.size());
+	dataVec retVal(s);
+	for (size_t i = 0; i < s; i++)
+		retVal.at(i) = a.at(i) + b;
+	return retVal;
+}
+inline dataVec operator + (VEC_DATA_TYPE b, dataVec && a)
+{
+	for (VEC_DATA_TYPE & i : a)
+		i += b;
+	return a;
 }
 
 inline dataVec operator += (dataVec & a, const dataVec & b)
@@ -420,16 +534,20 @@ inline dataVec operator > (dataVec && a,VEC_DATA_TYPE b)
 		i = i>b?1:0;
 	return a;
 }
-
+/*
+//	This is required so that a dataVec can be printed using the printEx classes/methods by casting it to
+//	the underlying vector
 inline bool printVal(outputDataFile * f,const dataVec & value)
 {
 	printVal(f,(const std::vector<VEC_DATA_TYPE> &) value);
 	return true;
 };
+*/
 
 
-
-/*	An ordered list that can be used for calculating medians */
+//	An ordered list that can be used for calculating medians 
+//	Add the values using 'add' then 'median' finds the middle 
+//	value of the ordered set
 class orderedVec : public std::multiset<VEC_DATA_TYPE>
 {
 public:
@@ -437,8 +555,10 @@ public:
 	{
 		if (size() == 0) return 0;
 		auto i = begin();
-		size_t n = 0;
-		for (; n < size() / 2; i++, n++) {};
+		std::advance(i, size() / 2);
+
+//		size_t n = 0;
+//		for (; n < size() / 2; i++, n++) {};
 		return *i;
 	}
 	void add(VEC_DATA_TYPE v) { emplace(v); };

@@ -1,15 +1,15 @@
 // ***************************************************************************
-// DataVec.cpp (c) 2017 Nigel Dyer
+// DataVec.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 February 2018
 // ---------------------------------------------------------------------------
 // A  vector of values with some standard operators defined
 // ***************************************************************************
 
 #include "dataVec.h"
 #include "containerEx.h"
-#include "parser.h"
+#include "libParser.h"
 #include "rand.h"
 #include <iostream>
 #include <fstream>
@@ -144,6 +144,10 @@ void dataVec::clearCache()
 
 template<> void dataVec<>::resize(size_t s) {
 	vector<VEC_DATA_TYPE>::resize(s);
+};
+
+template<> void dataVec<>::resize(size_t s, const VEC_DATA_TYPE value) {
+	vector<VEC_DATA_TYPE>::resize(s,value);
 };
 
 template<> void dataVec<>::clearCache() {};

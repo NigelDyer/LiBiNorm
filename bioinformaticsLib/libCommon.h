@@ -1,8 +1,8 @@
 // ***************************************************************************
-// libCommon.h (c) 2017 Nigel Dyer
+// libCommon.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 February 2018
 // ---------------------------------------------------------------------------
 // Some common library functions
 // ***************************************************************************
@@ -35,6 +35,7 @@
 #include <ctime>
 #include <iostream>
 #include <string>
+#include <vector>
 #include <string.h>
 #include <math.h>
 #include "limits.h"
@@ -148,5 +149,8 @@ public:
 };
 
 
+std::string GetCwd();
+
+void read_directory(const std::string& name, std::vector<std::string>& v);
 
 #endif

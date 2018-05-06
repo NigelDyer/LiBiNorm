@@ -1,14 +1,14 @@
 // ***************************************************************************
-// parser.cpp (c) 2017 Nigel Dyer
+// libParser.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 February 2018
 // ---------------------------------------------------------------------------
 // For parsing text files
 // ***************************************************************************
 
 #include "libCommon.h"
-#include "parser.h"
+#include "libParser.h"
 
 using namespace std;
 

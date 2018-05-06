@@ -1,8 +1,8 @@
 // ***************************************************************************
-// inQuotes.h (c) 2017 Nigel Dyer
+// inQuotes.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 Feb 2018
 // ---------------------------------------------------------------------------
 // Some functions for parsing and printing text in quotations
 // ***************************************************************************
@@ -53,6 +53,7 @@ class fmtPrivate
 {
 //	Oddly, template<> needs to come before friend.  This can only be constructed using fmt.
 template <class _R> friend fmtPrivate<_R> fmt(const char * format,const _R & val);
+template <class _R> friend fmtPrivate<_R> $(const char * format, const _R & val);
 
 	fmtPrivate(const char * f,_Q v):format(f),value(v){};
 public:
@@ -61,9 +62,16 @@ public:
 };
 
 template <class _R>
+inline	fmtPrivate<_R> $(const char * format, const _R & val)
+{
+	return fmtPrivate<_R>(format, val);
+};
+
+template <class _R>
 inline	fmtPrivate<_R> fmt(const char * format,const _R & val)
 {
 	return fmtPrivate<_R>(format,val);
 };
+
 
 #endif

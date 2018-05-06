@@ -1,8 +1,8 @@
 // ***************************************************************************
-// parser.h (c) 2017 Nigel Dyer
+// parser.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 February 2018
 // ---------------------------------------------------------------------------
 // For parsing text files
 // ***************************************************************************
@@ -65,10 +65,12 @@ class parser
 	const char * delim;
 	bool multiSkip;
 
-	// A dummy method which is called when there are no further columns to process
 protected:
-	void parseNextEntry (const char * start) {};
 	parser (const char * delimiter,bool multiSkip=false):delim(delimiter),multiSkip(multiSkip){}; 
+
+	// A dummy method which is called when there are no further columns to process
+	void parseNextEntry(const char * start) {};
+
 	// The function itself, which is called recursively, each time peeling off and processing one entry 
 	//  from the tab delimited line.  Once the string is exhausted the start pointer is left on the terminating null and this 
 	//  calls the parseval method with the length set to zero, simulating an empty column
@@ -336,7 +338,11 @@ class parseTsvFile
 {
 public:
 	bool open(const std::string & filename);
-	void read() {}
+	void read() {
+		if (!file.eof())
+			std::getline(file, line);
+	}
+#ifdef LIBINORM
 	template<typename Value, typename... Rest> void read(Value & value, Rest&... rest)
 	{
 		if (!file.eof())
@@ -345,6 +351,27 @@ public:
 			parseTsv(line, value);
 			read(rest...);
 		}
+	}
+#else
+	template<typename... Values> void read(Values&... values)
+	{
+		if (!file.eof())
+		{
+			std::getline(file, line);
+			parseTsv(line, values...);
+		}
+	}
+#endif
+	bool read(const char * expected)
+	{
+		if (file.eof())
+			return false;
+		{
+			std::getline(file, line);
+			if (line.substr(0, strlen(expected)) != expected)
+				exitFail("Unexpected ", line);
+		}
+		return true;
 	}
 
 	template<typename Value1, typename Value2, typename... Rest> void read(std::map<Value1,Value2> & value, Rest&... rest)
@@ -364,6 +391,7 @@ public:
 			value.emplace(value1, move(value2));
 		}
 	}
+#ifdef LIBINORM
 	template<typename Value, typename... Rest> void read(std::vector<Value> & value, Rest&... rest)
 	{
 		for (size_t i = 0;i < value.size();i++)
@@ -373,6 +401,11 @@ public:
 			parseTsv(line, value[i]);
 		}
 		read(rest...);
+	}
+#endif
+	bool eof()
+	{
+		return file.eof();
 	}
 
 private:

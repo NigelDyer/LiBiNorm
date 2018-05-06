@@ -1,8 +1,8 @@
 // ***************************************************************************
-// stringEx.h (c) 2017 Nigel Dyer
+// stringEx.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 May 2018
 // ---------------------------------------------------------------------------
 // An extension to std::string that provides additional string handling functions
 // ***************************************************************************
@@ -38,7 +38,6 @@ public:
 	{
 		append(first,rest...);
 	}
-
 
 //  Additional types can be supported by adding an additional to_string operator.   See genomicPosition for an example.
 //	Note that the to_string must be placed in the std:: namespace otherwise gcc will only see it and not look
@@ -80,7 +79,7 @@ public:
 	};
 
 	template <typename _t>
-		stringEx & operator += (_t val)
+		stringEx & operator += (const _t & val)
 		{
 			 append(val);
 			 return *this;
@@ -200,13 +199,27 @@ public:
 	{
 		return substr(find_last_of("/\\")+1);
 	}
-/*	stringEx & replaceAll(const std::string & from,char to)
+	stringEx directory() const
+	{
+		return substr(0,find_last_of("/\\") + 1);
+	}
+	stringEx toLower() const;
+
+	/*	stringEx & replaceAll(const std::string & from,char to)
 	{
 		size_t f = 0;
 		while ((f = find_first_of(from,f)) != std::string::npos)
 			at(f) = to;
 		return *this;
 	}	*/
+	bool contains(const char * _V) const
+	{
+		return (find(_V) != npos);
+	}
+	bool endsWith(const std::string _V) const
+	{
+		return (substr(size()-_V.size()) == _V);
+	}
 	bool startsWith(const std::string _V) const
 	{
 		return (substr(0,_V.size()) == _V);
@@ -215,6 +228,28 @@ public:
 	{
 		return (substr(0,strlen(_V)) == _V);
 	}
+	bool startsWith(const std::vector<std::string> strings) const
+	{
+		for (const auto & str : strings)
+		{
+			if (startsWith(str))
+				return true;
+		}
+		return false;
+	}
+	bool startsWith(const char * str, const char *& p) const
+	{
+		if (startsWith(str))
+		{
+			p = c_str() + strlen(str);
+			return true;
+		}
+		else
+		{
+			p = 0;
+			return false;
+		}
+	};
 
 	void truncateFrom(const char * _V)
 	{
@@ -248,6 +283,13 @@ public:
 	{
 		stringEx a;
 		for (size_t i = 0;i < n;i++)
+			a += *this;
+		return a;
+	}
+	const stringEx operator *(int n) const
+	{
+		stringEx a;
+		for (size_t i = 0; i < n; i++)
 			a += *this;
 		return a;
 	}

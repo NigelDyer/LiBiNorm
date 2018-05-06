@@ -2,7 +2,7 @@
 // fastaFile.h (c) 2017 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 5 August 2017
 // ---------------------------------------------------------------------------
 // Some functions for processing fasta files
 // ***************************************************************************

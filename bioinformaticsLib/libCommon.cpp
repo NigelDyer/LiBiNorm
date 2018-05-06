@@ -1,14 +1,18 @@
 // ***************************************************************************
-// libCommon.cpp (c) 2017 Nigel Dyer
+// libCommon.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 28 February 2018
 // ---------------------------------------------------------------------------
 // Some common library functions
 // ***************************************************************************
 
 #ifdef _WIN32
 #include <direct.h>
+#include <iterator>
+#include <filesystem>
+#include <experimental/filesystem> // C++-standard header file name  
+using namespace std::experimental::filesystem::v1;
 #else
 //	For rmdir
 #include <unistd.h>	
@@ -16,6 +20,8 @@
 #include <sys/stat.h>
 //#define mkdir(A) mkdir(A,S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH)
 #define mkdir(A) mkdir(A,S_IRWXU )
+#include <sys/types.h>
+#include <dirent.h>
 #endif
 
 #include <chrono>
@@ -35,6 +41,10 @@ string & tempDirectory::theDirectory()
 	static string dir;
 	return dir;
 }
+
+#ifdef _WIN32
+#define PATH_MAX _MAX_PATH
+#endif
 
 string tempDirectory::get(string suggestion)
 {
@@ -101,3 +111,35 @@ tempDirectory::~tempDirectory()
 }
 
 
+std::string GetCwd()
+{
+	vector<char> buffer;
+	size_t size = PATH_MAX;
+	buffer.resize(size + 1);
+	while (::getcwd(buffer.data(), size) == (char *)ERANGE)
+	{
+		size *= 2;
+		buffer.resize(size + 1);
+	}
+	return string(buffer.data());
+}
+
+
+#ifdef _WIN32
+
+void read_directory(const std::string& name, std::vector<std::string>& v)
+{
+	for (auto & i : directory_iterator(name))
+		v.push_back(i.path().filename().string());
+}
+#else
+void read_directory(const std::string& name, std::vector<std::string>& v)
+{
+    DIR* dirp = opendir(name.c_str());
+    struct dirent * dp;
+    while ((dp = readdir(dirp)) != NULL) {
+        v.push_back(dp->d_name);
+    }
+    closedir(dirp);
+}
+#endif

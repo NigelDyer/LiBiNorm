@@ -2,7 +2,7 @@
 // nelderMeadOptimiser.cpp (c) 2017 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 11 August 2017
 // ---------------------------------------------------------------------------
 // An implementation of the NelderMead optimser.  This code is based on code 
 //  originally given to me in 1981 by John Cook at the British Telecom 
@@ -493,35 +493,4 @@ VEC_DATA_TYPE nelderMeadOptimiser::optimise(optiDataType & data, int maxIter, in
 	SaveResults(false);
 
 	return m_ErrLowest.NoWeightings;
-}
-
-#define PROGRESS_FILENAME "progress.csv"
-
-template <typename... Params>
-void nelderMeadOptimiser::SaveProgress(const string & id,const Params & ...params)
-{
-#ifdef SAVE_PROGRESS
-	FILE * f = fopen((m_rootDir + PROGRESS_FILENAME).c_str(), "a");
-	if (f == 0)
-	{
-		optMessage("Failed to open ",PROGRESS_FILENAME);
-	}
-	else
-	{
-		fprintf(f, "%i,%f,%f", m_totalIterations, (status) ? m_ErrLowest.WithWeightings : m_ErrLast.WithWeightings,
-			(status) ? m_ErrLowest.NoWeightings : m_ErrLast.NoWeightings);
-		if (status)
-			fprintf(f, ",%s", status);
-		fprintf(f, "\n");
-
-		fclose(f);
-	}
-#else
-
-	char buffer[1000];
-	sprintf(buffer, ":%i - %12f, %12f, %12f", m_totalIterations, m_ErrLowest.WithPrior, Eps, m_ErrLowest.NoWeightings);
-	debugMessage(id,buffer,params...);
-
-#endif
-
 }
