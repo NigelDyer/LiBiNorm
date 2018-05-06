@@ -1,8 +1,8 @@
 // ***************************************************************************
-// GeneCountData.cpp (c) 2017 Nigel Dyer
+// GeneCountData.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 May 2018
 // ---------------------------------------------------------------------------
 // For processing count information associated with genes
 // ***************************************************************************
@@ -11,6 +11,23 @@
 #include "GeneCountData.h"
 
 using namespace std;
+
+intRandClass & intRandClass::instance()
+{
+	static intRandClass instance;
+	return instance;
+}
+unsigned int intRandClass::value(unsigned int max)
+{
+	auto v = gen();
+	return v % max;
+};
+//	Set a specific seed
+void intRandClass::reseed(unsigned int value) {
+	seed = value;
+	gen.seed(seed);
+};
+
 
 //  Remove reads that, apparently, start before the beginning or after the end of the gene.
 //	The first version reproduces the less efficient algorithm that was used in th eoriginal matlab
@@ -39,7 +56,7 @@ rnaPosVec & rnaPosVec::removeInvalidValues(rna_pos_type maxVal)
 	iterator i = begin(), j = end();
 	while (i != j)
 	{
-		if ((*i < 0) || (*i >= maxVal))
+		if ((*i <= 0) || (*i >= maxVal))
 			std::swap(*i, *--j);
 		else
 			i++;
@@ -154,11 +171,14 @@ bool GeneCountData::outputGeneCounts(const string & filename, int detailLevel, s
 			VEC_DATA_TYPE scalingFactor = sum(counts) / 1000000;
 
 			RPM[i] = counts / scalingFactor;
-			RPKM[i] = RPM[i] / lengths[i];
+			RPKM[i] = RPM[i] / lengths[i]*1000;
 
 			RPK[i] = counts / lengths[i];
 			scalingFactor = sum(RPK[i]) / 1000000;
 			TPM[i] = RPK[i] / scalingFactor;
+
+			//	TPM  = counts/lengths/scaling factor
+			//  RPKM  = counts/scalingfactor/lengths
 		}
 
 		switch (detailLevel)
@@ -360,9 +380,12 @@ bool GeneCountData::outputHeatmapData(const stringEx & filename)
 #ifdef N_BIAS_GENE_SEGMENTS
 	//	And now consolidate the data down to N_BIAS_GENE_SEGMENTS (500) rows by combining genes
 	dataArray consolidatedBins(N_BIAS_GENE_SEGMENTS, N_BIAS_BINS);
+	dataVec averageLength(N_BIAS_GENE_SEGMENTS);
 
 	size_t lastPos = 0;
 	size_t section_count = 0;
+	float length_accumulator = 0;
+	auto currentLength = orderedLengths.begin();
 	for (size_t i = 0; i < allBins.size(); i++)
 	{
 		size_t currPos = (i * N_BIAS_GENE_SEGMENTS)/ allBins.size();
@@ -371,11 +394,16 @@ bool GeneCountData::outputHeatmapData(const stringEx & filename)
 #ifndef PEAKVALUES
 			//	Normalise by the number of genes in this section
 			consolidatedBins[lastPos] /= section_count;
+			averageLength[lastPos] = length_accumulator / section_count;
 
 			//	This does infill if there are fewer than N_BIAS_GENE_SEGMENTS genes
 			for (size_t i = lastPos + 1; i < currPos; i++)
+			{
 				consolidatedBins[i] = consolidatedBins[lastPos];
+				averageLength[i] = averageLength[lastPos];
+			}
 #endif
+			length_accumulator = 0;
 			section_count = 0;
 			lastPos = currPos;
 		}
@@ -386,6 +414,7 @@ bool GeneCountData::outputHeatmapData(const stringEx & filename)
 #else
 		consolidatedBins[currPos] += allBins[i];
 #endif
+		length_accumulator += (currentLength++ ->first);
 		section_count++;
 	}
 #ifndef PEAKVALUES
@@ -398,7 +427,7 @@ bool GeneCountData::outputHeatmapData(const stringEx & filename)
 #endif
 	//	Output in reverse order so that it is plotted correctly by R
 	for ( int i = consolidatedBins.size()-1; i >= 0;i--)
-		tsvFile.print(fmt("%f", consolidatedBins[i]));
+		tsvFile.print($("%f",averageLength[i]), $("%f", consolidatedBins[i]));
 #else
 	//	This is the code for if we are not consolidating but outputting all of the genes
 	for (int i = allBins.size() - 1; i >= 0; i--)
@@ -407,6 +436,58 @@ bool GeneCountData::outputHeatmapData(const stringEx & filename)
 
 	return true;
 }
+
+
+void GeneCountData::getDistribution(const vector<int> & histLengths, size_t points, vector<dataVec> & counts)
+{
+	map<VEC_DATA_TYPE,size_t> breakpoints;
+	for (size_t i = 0; i < histLengths.size() - 1; i++)
+		breakpoints.emplace(sqrt(histLengths[i] * histLengths[i + 1]),i);
+	breakpoints.emplace(1E99, histLengths.size()-1);
+
+	vector<double> E(points);
+
+	//	Increment from 1 because the first entry is the reference length
+	for (size_t i = 1; i < info.size(); i++)
+	{
+		if (info[i].useForParameterEstimation)
+		{
+
+			string name = info[i].name;
+			const rnaSeqPositionData & data = readPositionData[name];
+
+			size_t pos = breakpoints.lower_bound(lengths[0][i])->second;
+			double lengthInc = (double)lengths[0][i] / points;
+			for (size_t j = 0; j < points; j++)
+				E[j] = lengthInc * j;
+
+			for (size_t strand = 0; strand < 2; strand++)
+			{
+				const rnaPosVec & readPositions = data.positions[strand];
+				for (auto v : readPositions)
+				{
+					size_t l = 0;
+					size_t h = points - 1;
+					size_t k = l;
+					while ((h - l) > 1)
+					{
+						k = (h + l) / 2;
+						if (v < E[k])
+							h = k;
+						else
+							l = k;
+					}
+					if (v >= E[h])
+						k = h;
+					else
+						k = l;
+					counts[pos][k]++;
+				}
+			}
+		}
+	}
+}
+
 
 //	Find the number of read position values in 'this' (a vector) that sits within each bin of the
 //	histogram defined by E.   The results go into the 'freq'vector
@@ -564,23 +645,78 @@ string GeneCountData::loadData(const string filename, int Ngenes)
 	return lastGene;
 }
 
+#define MIN_COUNT 20
+#define H_GAP 10
+void GeneCountData::flatten()
+{
+
+	for (auto & geneData : readPositionData)
+	{
+		size_t length = lengths[0][geneData.second.index];
+		static int countMess = 0;
+		if (countMess == 0)
+		{
+			cout << "flattening data\n";
+			countMess = 1;
+		}
+
+		if (counts[geneData.second.index] > MIN_COUNT)
+		{
+			size_t N = geneData.second.positions[0].size();
+			geneData.second.positions[0].clear();
+			for (size_t i = 1; i < N + 1; i++)
+				geneData.second.positions[0].push_back(H_GAP + (length- (2*H_GAP)) * i / (N + 1));
+
+			N = geneData.second.positions[1].size();
+			geneData.second.positions[1].clear();
+			for (size_t i = 1; i < (N + 1); i++)
+				geneData.second.positions[1].push_back(H_GAP + (length- (2*H_GAP)) * i / (N + 1));
+		}
+		else
+		{
+			geneData.second.positions[0].clear();
+			geneData.second.positions[1].clear();
+			counts[geneData.second.index] = 0;
+		}
+	}
+
+}
 //	Transfers information for up to maxLength reads from up to Ngenes genes or transcripts
 //	into the form which can be used by the mcmc chain
 void GeneCountData::transferTo(mcmcGeneData & mcmcData, size_t maxLength, int maxTotReads, int maxGeneLengthForParameterEstimation)
 {
+
+#ifdef MAKE_LANDSCAPE_OF_USED_READS
+	TsvFile output;
+	string filename("reduced_landscape.txt");
+	if (!output.open(filename))
+		exitFail("Unable to open ", filename, " for landscape data");
+	output.print("Landscape file", "Format", 2);
+#endif
+
 	vectorEx<int> bins{ { 0,300 } };
 	for (size_t i = 500; i <= 10000; i += 500)
 		bins.push_back(i);
-	bins.add(11000, 12000, 15000, 30000);
+	bins += {11000, 12000, 15000, 30000};
 
 	histc(bins, maxGeneLengthForParameterEstimation);
 
+#ifdef ORIGINAL_WEIGHTING
 	freq[0] = freq[0] * 2;
 	freq[1] = freq[1] * 2;
 	freq[21] = freq[21] / 2;
 	freq[22] = freq[22] / 2;
 	freq[23] = freq[23] / 6;
 	freq[24] = freq[24] / 6;
+#else
+	freq[0] = freq[0] * 2;
+	freq[1] = freq[1] * 1.5;
+	freq[21] = freq[21] / 1.3;
+	freq[22] = freq[22] / 1.7;
+	freq[23] = freq[23] / 2;
+	freq[24] = freq[24] / 2.5;
+
+#endif
 
 	size_t geneIndex = 0;
 	mcmcData.geneLengths.resize(readPositionData.size());
@@ -598,6 +734,13 @@ void GeneCountData::transferTo(mcmcGeneData & mcmcData, size_t maxLength, int ma
 		//	ie do not overlap other genes, and are less than the current length threshold.
 		if ((info[i].useForParameterEstimation) && (lengths[0][i] <= maxGeneLengthForParameterEstimation))
 		{
+#ifdef MAKE_LANDSCAPE_OF_USED_READS
+			long count = counts[i];
+			long len = lengths[0][i];
+			string & name = info[i].name;
+			output.print(name, len, count, info[i].useForParameterEstimation ? "Y" : "N");
+#endif
+
 			//	For the forward and the reverse counts
 			for (size_t j = 0; j < 2; j++)
 			{
@@ -607,6 +750,10 @@ void GeneCountData::transferTo(mcmcGeneData & mcmcData, size_t maxLength, int ma
 				//	fragData contains the count 
 				size_t len = min(maxLength, positions.size());
 				mcmcData.fragData.append(positions,len);
+
+#ifdef MAKE_LANDSCAPE_OF_USED_READS
+				output.print(name, (j==0)?"plus":"minus", positions);
+#endif
 
 				mcmcData.geneIndex.insert(mcmcData.geneIndex.end(),len, geneIndex);
 				Nreads += positions.size();

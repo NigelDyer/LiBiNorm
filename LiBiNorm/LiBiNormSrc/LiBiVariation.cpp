@@ -1,13 +1,13 @@
 // ***************************************************************************
-// LiBiVariation.cpp (c) 2017 Nigel Dyer
+// LiBiVariation.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 May 2018
 // ---------------------------------------------------------------------------
 // The top level code associated with "LiBiNorm count" modes
 // ***************************************************************************
 
-#include "parser.h"
+#include "libParser.h"
 #include "LiBiVariation.h"
 
 using namespace std;
@@ -38,7 +38,7 @@ int LiBiVariation::main(int argc, char **argv)
 	while (ni < argc-1)
 	{
 		bool opt2 = false;
-		if (commandParseCommon(ni, argc, argv))
+		if (commandParseCommon(ni, argv))
 		{
 		}
 		else if ((strcmp(argv[ni], "-e") == 0) || (opt2 = (strncmp(argv[ni], "--seed=", 7) == 0)))
@@ -65,9 +65,9 @@ int LiBiVariation::main(int argc, char **argv)
 	SetInitialParamsFromFile(parameterFilename);
 
 	//	Load up the landscape file
-	geneCounts.loadData(landscapeFilename, -1);
-	geneCounts.remove_invalid_values();
-	geneCounts.transferTo(geneData, MAX_READS_GENE, maxReads, maxGeneLength);
+	allGeneCounts.loadData(landscapeFilename, -1);
+	allGeneCounts.remove_invalid_values();
+	allGeneCounts.transferTo(allGeneData, MAX_READS_GENE, maxReads, maxGeneLength);
 
 	string filename(outputFileroot.replaceSuffix("_variation.txt"));
 	TsvFile mcmcResult;
@@ -112,7 +112,7 @@ int LiBiVariation::main(int argc, char **argv)
 				dataVec values = initialValues[m];
 				values[p] = params[m][p].min + i;
 				setSSfun(options, m);
-				double ss1 = options.ssfun(values, geneData);
+				double ss1 = options.ssfun(values, allGeneData);
 				mcmcResult.printMiddle(values, ss1, "");
 			}
 			mcmcResult.printEnd();

@@ -54,6 +54,9 @@
     <ClCompile Include="LiBiTools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="refSeqs.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="LiBiNorm.h">
@@ -96,6 +99,30 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="LiBiTools.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="refSeqs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hisat2Lib\alphabet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hisat2Lib\assert_helpers.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hisat2Lib\endian_swap.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hisat2Lib\hisat2Lib.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hisat2Lib\ref_read.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hisat2Lib\reference.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\hisat2Lib\word_io.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

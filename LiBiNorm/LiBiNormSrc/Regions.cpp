@@ -20,11 +20,6 @@ using namespace BamTools;
 readData::readData(BamTools::BamAlignment && ba) :
 	refId(ba.RefID),
 	position(ba.Position + 1),
-#ifdef MATCH_USING_ONE_POSITION
-	mateRefId(ba.MateRefID),
-	matePosition(ba.MatePosition),
-#endif
-
 	qual(ba.MapQuality),
 	cigar(move(ba.CigarData))
 {
@@ -46,10 +41,6 @@ readData::readData(BamTools::BamAlignment && ba) :
 readData::readData(const BamTools::BamAlignment & ba) :
 	refId(ba.RefID),
 	position(ba.Position + 1),
-#ifdef MATCH_USING_ONE_POSITION
-	mateRefId(ba.MateRefID),
-	matePosition(ba.MatePosition),
-#endif
 	qual(ba.MapQuality),
 	cigar(ba.CigarData)
 {
@@ -208,9 +199,6 @@ bool printVal(outputDataFile * f,const Cigar & cigar)
 bool printVal(outputDataFile * f,const readData & read)
 {
 	f->printStart(read.refId,read.position,
-#ifdef MATCH_USING_ONE_POSITION
-		read.mateRefId, read.matePosition,
-#endif
 		read.strand,read.cigar,read.NH,read.qual);
 	return true;
 };

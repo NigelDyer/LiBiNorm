@@ -1,8 +1,8 @@
 // ***************************************************************************
-// LiBiNormCore.cpp (c) 2017 Nigel Dyer
+// LiBiNormCore.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 May 2018
 // ---------------------------------------------------------------------------
 // Common code associated with all of the LiBiNorm modes
 // ***************************************************************************
@@ -21,32 +21,55 @@ using namespace std;
 void LiBiNormCore::helpCommon()
 {
 	printf("  -n M, --normModel=M   Specifies that model M should be used rather than the default\n");
-	printf("                        Model BD. M options: best,A,B,C,D or polyA,\n");
-	printf("                        E or random,BD or smart.  best causes all models to be evaluated\n");
-	printf("                        and the best, based on liklihood selected\n");
+	printf("                        Model BD. M options: A,B,C,D or polyA,\n");
+	printf("                        E or random,BD or smart");
+#ifdef SELECT_BY_LL
+	printf(",best.  best causes all models to\n");
+	printf("                        be evaluated and the best, based on liklihood selected\n");
+#endif
+	printf("\n");
 	printf("  -u FILEROOT, --normFileroot=FILEROOT\n");
 	printf("                        All output summary info is sent to files with root FILEROOT\n");
 	printf("  -p N, --threads=N     Number of threads for normalisation parameter\n");
 	printf("                        determination (", DEF_THREADS, ")\n");
 	printf("  -d N, --reads=N       Maximum number of reads using for normalisation\n");
 	printf("                        parameter determination (", DEF_MAX_READS_FOR_PARAM_ESTIMATION, ")\n");
+#ifndef SELECT_BY_LL
+	printf("  -f, --full            Calculate full set of models\n");
+#endif
 #ifdef INITIAL_VALUES
-	printf("  -i <filename>, --initial=FILENAME\n");
+	printf("  -v <filename>, --initial=FILENAME\n");
 	printf("                        Set initial values for parameter discoverey from file\n");
 #endif
 	printf("  -q, --quiet           suppress progress report\n");
 #ifdef OUTPUT_DEBUG_MESSAGES
-	printf("  -x, --debug           output debug messages\n");
+	printf("  -w, --debug           output debug messages\n");
 #endif
 #ifdef PAUSE_AT_END_OPTION
-	printf("  -w	                pause at end rather than simply exiting\n");
+	printf("  -x	                pause at end rather than simply exiting\n");
+#endif
+#ifdef SELECT_READ_SEED
+	printf("  -y N, --seed=N        Set seed used for selecting subset of reads\n");
 #endif
 	printf("  -c FILENAME, --counts=FILENAME\n");
 	printf("                        Name of output file. default: writes to stdout\n");
 
 }
 
-bool LiBiNormCore::commandParseCommon(int & ni, int argc,char **argv)
+void LiBiNormCore::featureAndIdAttributeHelp()
+{
+	printf("  -t FEATURETYPE, --type=FEATURETYPE\n");
+	printf("                        feature type (3rd column in GFF file) to be used, all\n");
+	printf("                        features of other type are ignored (default for \n");
+	printf("                        Ensemble GTF and GFF files: ", DEFAULT_FEATURE_TYPE_EXON, ")\n");
+	printf("  -i IDATTR, --idattr=IDATTR\n");
+	printf("                        GFF attribute to be used to identify the feature ID\n");
+	printf("                        (default for Ensembl GTF files: ", DEFAULT_GTF_ID_ATTRIBUTE, "\n");
+	printf("                        default for GFF3 files: ", DEFAULT_GFF_ID_ATTRIBUTE, ")\n");
+}
+
+
+bool LiBiNormCore::commandParseCommon(int & ni, char **argv)
 {
 		bool opt2 = false;
 		if ((strcmp(argv[ni], "-u") == 0) || (opt2 = (strncmp(argv[ni], "--outputFileroot=", 17) == 0)))
@@ -75,18 +98,31 @@ bool LiBiNormCore::commandParseCommon(int & ni, int argc,char **argv)
 		}
 		if ((strcmp(argv[ni], "-c") == 0) || (opt2 = (strncmp(argv[ni], "--counts=", 9) == 0)))
 		{
-			countsFilename = opt2 ? argv[++ni] + 9 : argv[++ni];
+			countsFilename = opt2 ? argv[ni] + 9 : argv[++ni];
 			return true;
 		}
+		if ((strcmp(argv[ni], "-j") == 0) || (opt2 = (strncmp(argv[ni], "--fkpm", 6) == 0)))
+		{
+			outputFPKM = true;
+			return true;
+		}
+
+#ifndef SELECT_BY_LL
+		if ((strcmp(argv[ni], "-f") == 0) || (opt2 = (strncmp(argv[ni], "--full", 6) == 0)))
+		{
+			calcAllModels = true;
+			return true;
+		}
+#endif
 #ifdef OUTPUT_DEBUG_MESSAGES
-		if ((strcmp(argv[ni], "-x") == 0) || (opt2 = (strncmp(argv[ni], "--debug", 7) == 0)))
+		if ((strcmp(argv[ni], "-w") == 0) || (opt2 = (strncmp(argv[ni], "--debug", 7) == 0)))
 		{
 			debugPrint = true;
 			return true;
 		}
 #endif
 #ifdef PAUSE_AT_END_OPTION
-		if (strcmp(argv[ni], "-w") == 0)
+		if (strcmp(argv[ni], "-x") == 0)
 		{
 			pauseAtEnd = true;
 			return true;
@@ -99,13 +135,39 @@ bool LiBiNormCore::commandParseCommon(int & ni, int argc,char **argv)
 			return true;
 		}
 #ifdef INITIAL_VALUES
-		if ((strcmp(argv[ni], "-i") == 0) || (opt2 = (strncmp(argv[ni], "--intial=", 9) == 0)))
+		if ((strcmp(argv[ni], "-v") == 0) || (opt2 = (strncmp(argv[ni], "--intial=", 9) == 0)))
 		{
 			parameterFilename = (opt2 ? argv[ni] + 8 : argv[++ni]);
 			return true;
 		}
 #endif
+#ifdef SELECT_READ_SEED
+		if ((strcmp(argv[ni], "-y") == 0) || (opt2 = (strncmp(argv[ni], "--seed=", 7) == 0)))
+		{
+			int seed = atoi(opt2 ? argv[ni] + 7 : argv[++ni]);
+			intRandClass::instance().reseed(seed);
+			return true;
+		}
+#endif
+
 		return false;
+}
+
+
+bool LiBiNormCore::commandParseIdAndType(int & ni, char **argv)
+{
+	bool opt2 = false;
+	if ((strcmp(argv[ni], "-t") == 0) || (opt2 = (strncmp(argv[ni], "--type=", 7) == 0)))
+	{
+		feature_type = opt2 ? argv[ni] + 7 : argv[++ni];
+		return true;
+	}
+	if ((strcmp(argv[ni], "-i") == 0) || (opt2 = (strncmp(argv[ni], "--idattr=", 9) == 0)))
+	{
+		id_attribute = opt2 ? argv[ni] + 9 : argv[++ni];
+		return true;
+	}
+	return false;
 }
 
 void LiBiNormCore::SetInitialParamsFromFile(const string & filename)
@@ -114,6 +176,9 @@ void LiBiNormCore::SetInitialParamsFromFile(const string & filename)
 	if (!paramFile.open(filename))
 		exitFail("Unable to read parameters from ", filename);
 	paramFile.read(initialValues);
+
+
+	cout << "Need to check that SetIntialValuesFromFile works correctly" << endl;
 
 	//	Get rid of spurious values (possibly as a result of trailing tabs in the text file)
 	for (modelType m : allModels())
@@ -138,6 +203,7 @@ void LiBiNormCore::mcmcThread(optionsType options)
 
 				while ((modelsLeftToDo = (nelderMeadCounter < allModels().size())))
 				{
+//					m = allModels()[allModels().size() - nelderMeadCounter++ -1];
 					m = allModels()[nelderMeadCounter++];
 					if (threadLoopCounts[m].requested > 0)
 						break;
@@ -148,7 +214,7 @@ void LiBiNormCore::mcmcThread(optionsType options)
 				progMessage("Starting intial values ", m);
 			}
 
-			LiBiOptimiser  optimiser(geneData, m, bestResults[m].nelderMeadIterations);
+			LiBiOptimiser  optimiser(allGeneData, m, bestResults[m].nelderMeadIterations);
 			setSSfun(options, m);
 			initialValues[m] = optimiser.getParams(m, options, initialValues[m]);
 
@@ -195,7 +261,7 @@ void LiBiNormCore::mcmcThread(optionsType options)
 		options.qcov = dataVec(params.size(), options.jumpSize);
 
 		mcmc mcmcEngine;
-		mcmcEngine.mcmcrun(geneData, params, options);
+		mcmcEngine.mcmcrun(allGeneData, params, options);
 
 		//  Make sure only one thread at a time is outputting results
 		lock_guard<mutex> lock(mtx1);
@@ -214,11 +280,26 @@ void LiBiNormCore::mcmcThread(optionsType options)
 	}
 }
 
+void LiBiNormCore::checkFeatureAndIdAttribute()
+{
+	if (!feature_type)
+	feature_type = DEFAULT_FEATURE_TYPE_EXON;
+
+	if (!id_attribute)
+	{
+		if (featureFileName.suffix() == "gtf")
+			id_attribute = DEFAULT_GTF_ID_ATTRIBUTE;
+		else if (featureFileName.suffix().startsWith("gff"))
+			id_attribute = DEFAULT_GFF_ID_ATTRIBUTE;
+		else
+			exitFail("Unable to identify feature file type in order to specifiy default id attribute");
+	}
+}
 
 bool LiBiNormCore::coreParameterEstimation()
 {
-	geneCounts.remove_invalid_values();
-	geneCounts.transferTo(geneData, MAX_READS_GENE, maxReads, maxGeneLength);
+	allGeneCounts.remove_invalid_values();
+	allGeneCounts.transferTo(allGeneData, MAX_READS_GENE, maxReads, maxGeneLength);
 
 	elapsedTime("Data loaded");
 
@@ -336,10 +417,19 @@ bool LiBiNormCore::coreParameterEstimation()
 				{
 					VEC_DATA_TYPE v = orderedParams[p].median();
 					br.params[logValue][p] = v;
-					if (p < 4)
-						br.params[absValue][p] = pow(10, v);
+					if (p == 1)
+#ifdef ABS_H_PARAM
+						br.params[absValue][1] = v;
+#else
+						br.params[absValue][1] = pow(10, v);
+#endif
 					else
-						br.params[absValue][p] = v;
+					{
+						if (p < 4)
+							br.params[absValue][p] = pow(10, v);
+						else
+							br.params[absValue][p] = v;
+					}
 				}
 			}
 #endif
@@ -373,10 +463,19 @@ bool LiBiNormCore::coreParameterEstimation()
 						diffs[maxLog][p].add(br.params[logValue][p] - v);
 						diffs[logValue][p].add(br.params[logValue][p] - v);
 					}
-					if (p < 4)
-						diffs[absValue][p].add(abs(br.params[absValue][p] - pow(10, v)));
-					else
+					if (p == 1)
+#ifdef ABS_H_PARAM
 						diffs[absValue][p].add(abs(br.params[absValue][p] - v));
+#else
+						diffs[absValue][p].add(abs(br.params[absValue][p] - pow(10, v)));
+#endif
+					else
+					{
+						if (p < 4)
+							diffs[absValue][p].add(abs(br.params[absValue][p] - pow(10, v)));
+						else
+							diffs[absValue][p].add(abs(br.params[absValue][p] - v));
+					}
 				}
 			}
 			//	And then find the medians
@@ -431,6 +530,7 @@ bool LiBiNormCore::coreParameterEstimation()
 	return true;
 }
 
+#ifdef SELECT_BY_LL
 //	Find which model performed best based on the Log Liklihood
 modelType LiBiNormCore::getBestModel()
 {
@@ -446,7 +546,7 @@ modelType LiBiNormCore::getBestModel()
 	}
 	return bestModel;
 }
-
+#endif
 
 //	The top level summary of the results, showing best LL and associated paremeters for each model
 void LiBiNormCore::printResults()
@@ -499,12 +599,16 @@ void LiBiNormCore::printResults()
 	}
 
 	//	And the initial Values
-	if ((nelderMead) && (initialValues[ModelA].size()))
+	mcmcResult.printStart("Initial");
+	for (modelType m : allModels())
 	{
-		mcmcResult.printStart("Initial");
-		for (modelType m : allModels())
+
+		if (nelderMead && (initialValues[m].size()))
 			mcmcResult.printMiddle(initialValues[m], "");
+		else
+			mcmcResult.printRepeat(headers[m].size() + 2);
 	}
+
 	mcmcResult.printEnd();
 
 	//	A row for the deviations for each model
@@ -597,6 +701,99 @@ void LiBiNormCore::printBias()
 	}
 	mcmcResult.close();
 }
+
+#define BIN_COUNT 100
+
+void LiBiNormCore::printDistribution(GeneCountData & geneCounts)
+{
+	TsvFile distResult;
+	string filename(outputFileroot.replaceSuffix("_distribution.txt"));
+	if (!distResult.open(filename))
+		exitFail("Unable to open output File ", filename);
+
+	vector<int> lengths{ 200,500,1000,2000,3000,4000,6000,8000,10000,15000,20000 };
+
+	vector<dataVec> counts(lengths.size(), dataVec(BIN_COUNT));
+	geneCounts.getDistribution(lengths, BIN_COUNT, counts);
+
+	for (size_t i = 0; i < lengths.size(); i++)
+	{
+		counts[i].smooth(2);
+		counts[i].normalise();
+	}
+
+	vector<int> entries = { 1,2,3,5,7 };
+
+	distResult.print("ModelCount",Nmodels);
+	distResult.printStart("Position");
+	for (int i : entries)
+	{	
+		for (int j = 0;j < counts[i].size();j++)
+			distResult.printMiddle((double)j/counts[i].size());
+	}
+
+	distResult.print();
+	distResult.printStart("Reads");
+	distResult.printEnd(counts[1], counts[2], counts[3], counts[5], counts[7]);
+	distResult.printStart("Length");
+	for (int i : entries)
+		distResult.printRepeat(counts[i].size(), lengths[i]);
+	distResult.printEnd();
+
+
+	if (Nmodels)
+	{
+		distResult.printStart(theModel);
+
+		for (int i : entries)
+		{
+			dataVec dist = getDistribution(theModel, lengths[i], BIN_COUNT, bestResults[theModel].params[logValue]);
+			distResult.printMiddle(dist);
+		}
+		distResult.printEnd();
+
+		for (modelType modl : allModels())
+		{
+			if (bestResults[modl].params[logValue].size())
+			{
+				distResult.printStart(_s(modl, " LL=", $("%7.0f", -bestResults[modl].LLresult)));
+				for (int i : entries)
+				{
+					dataVec dist = getDistribution(modl, lengths[i], BIN_COUNT, bestResults[modl].params[logValue]);
+					distResult.printMiddle(dist);
+				}
+			}
+			else
+			{
+				distResult.printStart(modl);
+				distResult.printRepeat(BIN_COUNT * entries.size());
+			}
+			distResult.printEnd();
+		}
+		distResult.print();
+	}
+
+	distResult.print("Reads");
+	for (size_t i = 0; i < lengths.size(); i++)
+			distResult.print(lengths[i], counts[i]);
+	distResult.print();
+
+	for (modelType modl : allModels())
+	{
+		if (bestResults[modl].params[logValue].size())
+		{
+			distResult.print(modl);
+
+			for (auto l : lengths)
+			{
+				dataVec dist = getDistribution(modl, l, BIN_COUNT, bestResults[modl].params[logValue]);
+				distResult.print(l, dist);
+			}
+			distResult.print();
+		}
+	}
+}
+
 
 void LiBiNormCore::printAllMcmcRunData()
 {

@@ -1,8 +1,8 @@
 // ***************************************************************************
-// LiBiNorm.cpp (c) 2017 Nigel Dyer
+// LiBiNorm.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 May 2018
 // ---------------------------------------------------------------------------
 // The top level code associated with "LiBiNorm model" mode
 // ***************************************************************************
@@ -37,7 +37,13 @@ int main(int argc, char **argv)
 		printf("Commands:\n");	
 		printf("     count            htseq-count replacement with optional bias correction\n");
 		printf("     model            further bias correction analysis\n");
-		printf("     conv	          renames chromosomes in a .gff3 file to match those in a bam file\n");
+		printf("     conv             renames chromosomes in a .gff3 file to match those in a bam file\n");
+#ifdef OUTPUT_FASTA_FILE
+		printf("     refSeq           creates a fasta file with the gene reference sequences\n");
+#endif
+#ifdef OUTPUT_BED_DATA
+		printf("     bed              creates a bed file listing exons used for analysis\n");
+#endif
 #ifdef INITIAL_VALUES
 		printf("     variation        shows variation in Log Liklyhood with parameter\n");
 #endif
@@ -56,7 +62,8 @@ int main(int argc, char **argv)
 	}
 	else if (argc > 1)
 	{
-		string command(argv[1]);
+		string command = stringEx(argv[1]).toLower();
+//		string command = (argv[1]);
 		if (command == "count")
 		{
 			LiBiCount libiC;
@@ -72,6 +79,20 @@ int main(int argc, char **argv)
 			LiBiConv conv;
 			return conv.main(argc - 1, argv + 1);
 		}
+#ifdef OUTPUT_FASTA_FILE
+		if (command == "refseq")
+		{
+			LiBiTools tools;
+			return tools.refSeqsMain(argc - 1, argv + 1);
+		}
+#endif
+#ifdef OUTPUT_BED_DATA
+		if (command == "bed")
+		{
+			LiBiTools tools;
+			return tools.bedMain(argc - 1, argv + 1);
+		}
+#endif
 #ifdef LIBITOOLS
 		if (command == "variation")
 		{
@@ -145,14 +166,9 @@ int LiBiNorm::main(int argc, char **argv)
 		printf("                        parameter determination (", DEF_LENGTH_OF_GENE_FOR_PARAM_ESTIMATION, ")\n");
 #ifdef USE_NELDER_MEAD_FOR_INITIAL_VALUES
 		printf("  -k, --skip            Skip Nelder Mead parameter discovery stage. Use random initial values for MCMC\n");
-#endif
-#ifdef USE_NELDER_MEAD_FOR_INITIAL_VALUES
 		printf("  -s N, --mcmc=N        Length of each MCMC run (", NELDER_MCMC_ITERATIONS,")\n");
 #else
 		printf("  -s N, --mcmc=N        Length of each MCMC run (", MCMC_ITERATIONS, ")\n");
-#endif
-#ifdef SELECT_READ_SEED
-		printf("  -y N, --seed=N        Set seed used for selecting subset of reads\n");
 #endif
 		printf("  -f, --full            Output complete set of MCMC run data\n");
 		return EXIT_SUCCESS;
@@ -161,14 +177,16 @@ int LiBiNorm::main(int argc, char **argv)
 	while(ni < argc -1)
 	{
 		bool opt2 = false;
-		if (commandParseCommon(ni, argc,argv))
+		if (commandParseCommon(ni, argv))
 		{
 		}
 		else if ((strcmp(argv[ni], "-g") == 0) || (opt2 = (strncmp(argv[ni], "--genes=", 8) == 0)))
 		{
 			Ngenes = atoi(opt2 ? argv[ni] + 8 : argv[++ni]);
+#ifndef USE_GROUPS_OF_GENES_FOR_DISCOVERY
 			if (Ngenes < 10)
 				exitFail("At least 10 genes must be specified");
+#endif
 		}
 		else if ((strcmp(argv[ni], "-r") == 0) || (opt2 = (strncmp(argv[ni], "--runs=", 7) == 0)))
 		{
@@ -186,21 +204,12 @@ int LiBiNorm::main(int argc, char **argv)
 		{
 			maxGeneLength = atoi(opt2 ? argv[ni] + 13 : argv[++ni]);
 		}
-#ifdef SELECT_READ_SEED
-		else if ((strcmp(argv[ni], "-y") == 0) || (opt2 = (strncmp(argv[ni], "--seed=", 7) == 0)))
-		{
-			int seed = atoi(opt2 ? argv[ni] + 7 : argv[++ni]);
-			intRandClass::instance().reseed(seed);
-		}
-#endif
 #ifdef USE_NELDER_MEAD_FOR_INITIAL_VALUES
 		else if ((strcmp(argv[ni], "-k") == 0) || (opt2 = (strncmp(argv[ni], "--skip", 6) == 0)))
 		{
 			nelderMead = false;
 		}
 #endif
-		else if ((strcmp(argv[ni], "-f") == 0) || (opt2 = (strncmp(argv[ni], "--full", 6) == 0)))
-			outputFull = true;
 		else
 		{
 			exitFail("Invalid parameter: ",argv[ni]);
@@ -211,15 +220,62 @@ int LiBiNorm::main(int argc, char **argv)
 	landscapeFilename = argv[argc - 1];
 
 	//	If we specifiy the model then run the other models just once 
-	if (theModel == noModelSpecified)
+	Nmodels = allModels().size();
+	if (theModel == none)
+	{
+		normalise = false;
+		Nmodels = 0;
+	}
+#ifdef SELECT_BY_LL
+	else if (theModel == noModelSpecified)
+		NrunsOtherModels = Nruns;
+	else if (theModel == findBestModel)
 		NrunsOtherModels = Nruns;
 	else
-		NrunsOtherModels = (Nruns ==1)?0:1;
+	{
+//		NrunsOtherModels = (Nruns == 1) ? 0 : 1;
+		NrunsOtherModels = 0;
+		Nmodels = 1;
+	}
+#else
+	else if (calcAllModels)
+	{
+		NrunsOtherModels = Nruns;
+	}
 
-	geneCounts.loadData(landscapeFilename, Ngenes);
+
+#endif
+#ifdef USE_GROUPS_OF_GENES_FOR_DISCOVERY
+	geneCounts.loadData(landscapeFilename, 1000000);
+
+	bool useGene = true;
+	int geneCount = 0;
+	if (Ngenes < 0)
+	{
+		useGene = false;
+		Ngenes = -Ngenes;
+	}
+	for (int i = 0; i < geneCounts.info.size(); i++)
+	{
+		if (!useGene)
+		{
+			geneCounts.info[i].name = "XXX";
+			geneCounts.info[i].useForParameterEstimation = false;
+		}
+		if (++geneCount == Ngenes)
+		{
+			useGene = !useGene;
+			geneCount = 0;
+		}
+	}
+#else
+	allGeneCounts.loadData(landscapeFilename, Ngenes);
+#endif
+
+
 
 	if (outputFileroot)
-		geneCounts.outputHeatmapData(outputFileroot.replaceSuffix("_bias.txt"));
+		allGeneCounts.outputHeatmapData(outputFileroot.replaceSuffix("_bias.txt"));
 
 	//	Load up the initial values
 	if (parameterFilename)
@@ -227,42 +283,54 @@ int LiBiNorm::main(int argc, char **argv)
 		SetInitialParamsFromFile(parameterFilename);
 	}
 
-
-	coreParameterEstimation();
-
-	//	If we have explicitly specified the model then use it instead
-	if ((theModel == noModelSpecified) || (theModel == findBestModel))
+	if (normalise)
 	{
-		bestModel = getBestModel();
-		progMessage("Best model is ", bestModel);
-		theModel = bestModel;
-	}
-	else
-	{
-		progMessage("Model selected by command line is ", theModel);
-	}
 
-	getBias(theModel, bestResults[theModel].params[logValue], geneCounts.lengths[0], geneCounts.bias);
+		coreParameterEstimation();
 
-	//	If a file root was specified then output the detailed output files
-	if (outputFileroot)
-	{
-		string filename = outputFileroot.replaceSuffix("_expression.txt");
-		if (!geneCounts.outputGeneCounts(filename, outputFull ? 3 : 2, conv(theModel)))
-			exitFail("Unable to output counts to :", filename);
+		//	If we have explicitly specified the model then use it instead
+#ifdef SELECT_BY_LL
+		if ((theModel == noModelSpecified) || (theModel == findBestModel))
+		{
+			bestModel = getBestModel();
+			progMessage("Best model is ", bestModel);
+			theModel = bestModel;
+		}
+		else
+#endif
+		{
+			progMessage("Model selected by command line is ", theModel);
+		}
 
-		printResults();
-		printBias();
-	}
+		getBias(theModel, bestResults[theModel].params[logValue], allGeneCounts.lengths[0], allGeneCounts.bias);
 
-	//	Optional print out of all of the data for the full set of mcmc runs for each model
+		//	If a file root was specified then output the detailed output files
+		if (outputFileroot)
+		{
+			string filename = outputFileroot.replaceSuffix("_expression.txt");
+			if (!allGeneCounts.outputGeneCounts(filename, outputFPKM ? 3 : 2, conv(theModel)))
+				exitFail("Unable to output counts to :", filename);
+
+			printResults();
+			printBias();
+#ifdef PRINT_DISTRIBUTION
+			printDistribution(allGeneCounts);
+#endif
+		}
+
+		//	Optional print out of all of the data for the full set of mcmc runs for each model
 #ifdef PRINT_MCMC_RUN_DATA
-	printAllMcmcRunData();
-	printConsolidatedMcmcRunData();
+		printAllMcmcRunData();
+		printConsolidatedMcmcRunData();
+#endif
+	}
+#ifdef PRINT_DISTRIBUTION
+	else if(outputFileroot)
+		printDistribution(allGeneCounts);
 #endif
 
 	//	The basic count data in htseq-count format
-	if (!geneCounts.outputGeneCounts(countsFilename, 1, conv(theModel)))
+	if (!allGeneCounts.outputGeneCounts(countsFilename, normalise?1:0, conv(theModel)))
 		exitFail("Unable to output counts to :", countsFilename);
 
 	progMessage("Data modelled");

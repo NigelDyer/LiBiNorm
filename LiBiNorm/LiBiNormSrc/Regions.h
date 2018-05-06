@@ -31,17 +31,11 @@ class readData
 {
 	public:
 		readData(void):NH(0),qual(0),refId(0),position(0) 
-#ifdef MATCH_USING_ONE_POSITION
-			,mateRefId(0), matePosition(0)
-#endif
 		{}
 		readData(BamTools::BamAlignment && ba);
 		readData(const BamTools::BamAlignment & ba);
 
 		int refId, position;
-#ifdef MATCH_USING_ONE_POSITION
-		int mateRefId, matePosition;
-#endif
 		char strand;
 		short NH, qual;
 		Cigar cigar;

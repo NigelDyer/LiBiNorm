@@ -1,8 +1,8 @@
 // ***************************************************************************
-// LiBiTools.h (c) 2017 Nigel Dyer
+// LiBiTools.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 May 2018
 // ---------------------------------------------------------------------------
 // Assorted tools associated with LiBiNorm
 // ***************************************************************************
@@ -10,13 +10,16 @@
 #ifndef LIBITOOLS_H
 #define LIBITOOLS_H
 
+#include "LiBiNormCore.h"
 
-class LiBiTools
+class LiBiTools : public LiBiNormCore
 {
 public:
 	int landMain(int argc, char **argv);
 	int landMain2(int argc, char **argv);
 	int geneMain(int argc, char **argv);
+	int refSeqsMain(int argc, char **argv);
+	int bedMain(int argc, char **argv);
 };
 
 #endif // !LIBITOOLS_H

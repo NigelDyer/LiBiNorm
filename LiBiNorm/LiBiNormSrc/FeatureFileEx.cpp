@@ -2,11 +2,11 @@
 // FeatureFileEx.cpp (c) 2017 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 11th April 2018
 // ---------------------------------------------------------------------------
 // Extends featureFile class in bioinformaticsLib to support processing of 
 // gff and gtf files
-// ***************************************************************************#include "Options.h"
+// ***************************************************************************
 #include "FeatureFileEx.h"
 
 using namespace std;
@@ -114,13 +114,13 @@ void featureFileEx::index(GeneCountData & geneCounts, bool useStrand)
 						if (k.feature().finish > finish)
 						{
 							finish = k.feature().finish;
-							type.add(k.feature().type);
+							type.emplace(k.feature().type);
 							chrom.data().erase(k);
 						}
 						//	If the second region is the same length or shorter then just add the type associated with the new region
 						else if (k.feature().finish <= finish)
 						{
-							type.add(k.feature().type);
+							type.emplace(k.feature().type);
 							chrom.data().erase(k);
 						}
 					}
@@ -229,6 +229,24 @@ bool featureFileEx::outputChromData(const string & filename, const GeneCountData
 				j.feature.name, j.feature.type, j.feature.bioType,beingUsed, length,countF, countR);
 		}
 	}
+	return true;
+}
+
+bool featureFileEx::outputBedData(const string & filename)
+{
+	TsvFile output;
+	output.open(filename);
+
+	if (!output.is_open())
+	{
+		progMessage("Unable to open ", filename, " for outputting genome bed data");
+		return false;
+	}
+
+	for (auto & i : genomeGtfData)
+		for (featureRegion::chromosomeFeatureData::Pair j : i.second)
+			output.print(i.first,j.feature.start,j.feature.finish, j.feature.name, 1,j.feature.strand);
+
 	return true;
 }
 

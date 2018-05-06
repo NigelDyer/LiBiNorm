@@ -1,8 +1,8 @@
 // ***************************************************************************
-// GeneCountData.h (c) 2017 Nigel Dyer
+// GeneCountData.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 30 March 2018
 // ---------------------------------------------------------------------------
 // For processing count information associated with genes
 // ***************************************************************************
@@ -13,7 +13,7 @@
 #include <random>
 #include "containerEx.h"
 
-#include "parser.h"
+#include "libParser.h"
 #include "mcmc.h"
 
 
@@ -25,7 +25,7 @@
 class intRandClass
 {
 private:
-	intRandClass() 
+	intRandClass()
 	{
 #ifdef SELECT_READS_SEED
 		seed = SELECT_READS_SEED;
@@ -37,19 +37,11 @@ private:
 
 public:
 	//	A single instance is used for generating random numbers
-	static intRandClass & instance()
-	{
-		static intRandClass instance;
-		return instance;
-	}
+	static intRandClass & instance();
 	//	Use simple modulus function to generate a number between 0 and max-1
-	unsigned int value(unsigned int max) { return gen() % max; };
-	
+	unsigned int value(unsigned int max);
 	//	Set a specific seed
-	void reseed(unsigned int value) {
-		seed = value;  
-		gen.seed(seed);
-	};
+	void reseed(unsigned int value);
 
 private:
 	unsigned int seed;
@@ -174,7 +166,13 @@ public:
 	bool outputLandscape(const std::string & filename);
 	bool outputHeatmapData(const stringEx & filename);
 
+	//	Get read distribution 
+	void getDistribution(const std::vector<int> & lengths, size_t points, std::vector<dataVec>  & counts);
+
+
 	void useSelectedGenes(const geneListFilenameData & filename);
+
+	void flatten();
 
 	//	Names, bias, lengths and RPM data are held in a series of vectors sharing a common gene order
 	std::vector<countInfo> info;

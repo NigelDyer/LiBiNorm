@@ -1,8 +1,8 @@
 // ***************************************************************************
-// LiBiNormCore.h (c) 2017 Nigel Dyer
+// LiBiNormCore.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 May 2018
 // ---------------------------------------------------------------------------
 // Common code associated with all of the LiBiNorm modes
 // ***************************************************************************
@@ -45,27 +45,36 @@ protected:
 		nelderMead(false),
 		Nsimu(MCMC_ITERATIONS),
 #endif
+#ifdef SELECT_BY_LL
 		theModel(noModelSpecified), bestModel(noModelSpecified),
+#else
+		theModel(ModelBD), calcAllModels(false),
+#endif
 		maxReads(DEF_MAX_READS_FOR_PARAM_ESTIMATION),
 		maxGeneLength(DEF_LENGTH_OF_GENE_FOR_PARAM_ESTIMATION),
 		Nthreads(DEF_THREADS),
 		Nruns(NUMBER_OF_MCMC_RUNS),
 		NrunsOtherModels(0),
-		outputFull(false)
+		outputFPKM(false)
 	{
 		headers = getHeaders();
 	};
 
 	void helpCommon();
-	bool commandParseCommon(int & ni, int argc, char **argv);
+	void featureAndIdAttributeHelp();
+
+	bool commandParseCommon(int & ni, char **argv);
+	bool commandParseIdAndType(int & ni, char **argv);
+
 	void SetInitialParamsFromFile(const std::string & filename);
+	void checkFeatureAndIdAttribute();
 
 	void mcmcThread(optionsType options);
 	bool coreParameterEstimation();
-	modelType getBestModel();
 
 	void printResults();
 	void printBias();
+	void printDistribution(GeneCountData & geneCounts);
 	void printAllMcmcRunData();
 	void printConsolidatedMcmcRunData();
 
@@ -73,8 +82,21 @@ protected:
 protected:
 
 	bool normalise, pauseAtEnd,nelderMead;
-	size_t Nsimu;
-	modelType theModel, bestModel;
+	size_t Nsimu,Nmodels;
+	modelType theModel;
+
+#ifdef SELECT_BY_LL
+	modelType bestModel;
+	modelType getBestModel();
+#else
+	bool calcAllModels;
+#endif
+
+	//	Information relating to the gtf/gff file being used
+	//	use by LiBiNorm count and some tools
+	stringEx featureFileName;
+	stringEx id_attribute, feature_type;
+
 	size_t maxReads,maxGeneLength,Nthreads;
 	mcmcRunId Nruns,NrunsOtherModels;
 
@@ -98,14 +120,14 @@ protected:
 	std::map<modelType, bestResult> bestResults;
 
 	//	The specific data that will be used for the mcmc parameter determination
-	mcmcGeneData geneData;
-	GeneCountData geneCounts;
+	mcmcGeneData allGeneData;
+	GeneCountData allGeneCounts;
 private:
 	//	Counts of the number of mcmc runs that will be done for each model
 	struct loop_counts { mcmcRunId requested, counter; };
 	std::map<modelType, loop_counts> threadLoopCounts;
 protected:
-	bool outputFull;
+	bool outputFPKM;
 	size_t nelderMeadCounter;
 
 };

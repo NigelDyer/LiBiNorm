@@ -9,6 +9,14 @@
       <Configuration>Debug</Configuration>
       <Platform>x64</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="release notOptimised|Win32">
+      <Configuration>release notOptimised</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="release notOptimised|x64">
+      <Configuration>release notOptimised</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -39,7 +47,17 @@
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release notOptimised|Win32'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>Application</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release notOptimised|x64'" Label="Configuration">
     <ConfigurationType>Application</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v140</PlatformToolset>
@@ -56,7 +74,13 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release notOptimised|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='release notOptimised|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -72,13 +96,21 @@
     <NMakeOutput>LiBiNorm.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release notOptimised|Win32'">
+    <NMakeOutput>LiBiNorm.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <NMakeOutput>LiBiNorm.exe</NMakeOutput>
+    <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release notOptimised|x64'">
     <NMakeOutput>LiBiNorm.exe</NMakeOutput>
     <NMakePreprocessorDefinitions>WIN32;NDEBUG;$(NMakePreprocessorDefinitions)</NMakePreprocessorDefinitions>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\bamtools\src;../../bioinformaticsLib;../mcmcLib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\bamtools\src;../../bioinformaticsLib;../mcmcLib;../hisat2Lib</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;STATIC_LINK;WIN32;BAM_LIBRARY</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebug</RuntimeLibrary>
       <MinimalRebuild>false</MinimalRebuild>
@@ -89,13 +121,29 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
-      <AdditionalIncludeDirectories>..\..\bamtools\src;../../bioinformaticsLib;../mcmcLib</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>..\..\bamtools\src;../../bioinformaticsLib;../mcmcLib;../hisat2Lib</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>ZLIB_WINAPI;STATIC_LINK;WIN32;BAM_LIBRARY</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
       <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <Optimization>MaxSpeed</Optimization>
+    </ClCompile>
+    <Link>
+      <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
+      <Profile>true</Profile>
+      <GenerateDebugInformation>false</GenerateDebugInformation>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release notOptimised|x64'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\bamtools\src;../../bioinformaticsLib;../mcmcLib;../hisat2Lib</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>ZLIB_WINAPI;STATIC_LINK;WIN32;BAM_LIBRARY</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+      <InlineFunctionExpansion>AnySuitable</InlineFunctionExpansion>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <Optimization>Disabled</Optimization>
     </ClCompile>
     <Link>
       <LinkTimeCodeGeneration>UseLinkTimeCodeGeneration</LinkTimeCodeGeneration>
@@ -113,6 +161,11 @@
       <AdditionalIncludeDirectories>..\..\bamtools;../../bioinformaticsLib;../mcmcLib</AdditionalIncludeDirectories>
     </ClCompile>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release notOptimised|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>..\..\bamtools;../../bioinformaticsLib;../mcmcLib</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="FeatureFileEx.cpp" />
     <ClCompile Include="GeneCountData.cpp" />
@@ -126,9 +179,17 @@
     <ClCompile Include="LiBiVariation.cpp" />
     <ClCompile Include="MakeFastq.cpp" />
     <ClCompile Include="ModelData.cpp" />
+    <ClCompile Include="refSeqs.cpp" />
     <ClCompile Include="Regions.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\hisat2Lib\alphabet.h" />
+    <ClInclude Include="..\hisat2Lib\assert_helpers.h" />
+    <ClInclude Include="..\hisat2Lib\endian_swap.h" />
+    <ClInclude Include="..\hisat2Lib\hisat2Lib.h" />
+    <ClInclude Include="..\hisat2Lib\reference.h" />
+    <ClInclude Include="..\hisat2Lib\ref_read.h" />
+    <ClInclude Include="..\hisat2Lib\word_io.h" />
     <ClInclude Include="FeatureFileEx.h" />
     <ClInclude Include="GeneCountData.h" />
     <ClInclude Include="LiBiConv.h" />
@@ -142,6 +203,7 @@
     <ClInclude Include="MakeFastq.h" />
     <ClInclude Include="ModelData.h" />
     <ClInclude Include="Options.h" />
+    <ClInclude Include="refSeqs.h" />
     <ClInclude Include="Regions.h" />
   </ItemGroup>
   <ItemGroup>

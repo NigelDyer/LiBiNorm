@@ -1,8 +1,8 @@
 // ***************************************************************************
-// FeatureFileEx.h (c) 2017 Nigel Dyer
+// FeatureFileEx.h (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 21 April 2018
 // ---------------------------------------------------------------------------
 // Extends featureFile class in bioinformaticsLib to support processing of 
 // gff and gtf files
@@ -56,6 +56,10 @@ public:
 	const std::string bioType;
 	char strand;
 	chromosomeFeatureData::iterator overlaps;
+
+#ifdef HISAT2
+	std::string sequence;
+#endif
 };
 
 
@@ -104,6 +108,13 @@ public:
 	std::string chromosome;
 	bool overlapsAnotherGene;
 	char strand;
+
+#ifdef HISAT2
+	size_t length;
+	std::string priorSeq, postSeq;
+	std::map<rna_pos_type, size_t> mRNAtoSeq;
+#endif
+
 };
 
 //
@@ -116,6 +127,8 @@ public:
 	void index(GeneCountData & geneCounts,bool useStrand);
 	//	Print feature data and counts to a file
 	bool outputChromData(const std::string & filename, const GeneCountData & geneCounts);
+	//	Print feature data as bed file
+	bool outputBedData(const std::string & filename);
 
 	//	A container of all the consolidated feature regions
 	genomeFeatureRegions genomeGtfData; 

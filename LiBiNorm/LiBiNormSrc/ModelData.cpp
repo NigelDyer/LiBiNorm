@@ -1,8 +1,8 @@
 // ***************************************************************************
-// ModelData.cpp (c) 2017 Nigel Dyer
+// ModelData.cpp (c) 2018 Nigel Dyer
 // School of Life Sciences, University of Warwick
 // ---------------------------------------------------------------------------
-// Last modified: 24 July 2017
+// Last modified: 3 May 2018
 // ---------------------------------------------------------------------------
 // Code for each of the five models
 // ***************************************************************************
@@ -11,7 +11,6 @@
 #include "stringEx.h"
 #include "containerEx.h"
 #include "ModelData.h"
-#include "Options.h"
 using namespace std;
 
 //	Sets the methods to be used for the liklihood (sum of squares) and prior functions
@@ -19,7 +18,10 @@ void setSSfun(optionsType & options,modelType m)
 {
 	switch (m)
 	{
+#ifdef SELECT_BY_LL
 	case noModelSpecified: break;
+	case findBestModel:	break;
+#endif
 	case ModelA:
 		options.ssfun = &FLL_ModelA;
 		options.priorfun = &priorFunc;
@@ -44,34 +46,35 @@ void setSSfun(optionsType & options,modelType m)
 		options.ssfun = &FLL_ModelBD;
 		options.priorfun = &priorFunc;
 		break;
-	case findBestModel:
-			break;
+	case none:;
 	}
 }
 
 
 
 //	Returns a list of all the models, which is used to iterate through the list
-const std::vector<modelType> & allModels()
+const vector<modelType> & allModels()
 {
-	static std::vector<modelType> list{ ModelA ,ModelB ,ModelC,ModelD,ModelE,ModelBD };
+	static vector<modelType> list{ModelA ,ModelB ,ModelC,ModelD,ModelE,ModelBD };
 	return list;
 };
 
 //	Converts a modelType to a string
-string conv(const modelType m, bool removeGaps)
+stringEx conv(const modelType m, bool removeGaps)
 {
 	stringEx retVal;
 	switch (m)
 	{
+#ifdef SELECT_BY_LL
 	case noModelSpecified: retVal = "No model specified"; break;
+	case findBestModel: retVal = "Best"; break;
+#endif
 	case ModelA: retVal = "Model A"; break;
 	case ModelB: retVal = "Model B"; break;
 	case ModelC: retVal = "Model C"; break;
 	case ModelD: retVal = "Model D"; break;
 	case ModelE: retVal = "Model E"; break;
 	case ModelBD: retVal = "Model BD"; break;
-	case findBestModel: retVal = "Best"; break;
 	case none: retVal = "None"; break;
 	}
 	if (removeGaps)
@@ -103,7 +106,9 @@ modelType modelFromString(const string & desc)
 		{ "PolyA",ModelD },{"polya",ModelD },{ "POLYA",ModelD },{ "polyA",ModelD },
 		{"random",ModelE},{ "RANDOM",ModelE },
 		{ "smart",ModelBD },{ "SMART",ModelBD },{ "Smart",ModelBD },
+#ifdef SELECT_BY_LL
 		{"best",findBestModel },{"BEST",findBestModel },{ "Best",findBestModel },
+#endif
 		{"none",none},{"NONE",none},{ "None",none }
 	};
 	auto iter = mappings.find(desc);
@@ -120,13 +125,20 @@ bool printVal(outputDataFile * f, modelType m)
 
 //	udentifier, min max and initial value for each of the parameters
 #define PARAM_D { "d", -1, 2, -0.5 }
+
+#ifdef ABS_H_PARAM
+#define PARAM_H { "h", -1, 200, 3}	// 20_80 10-> 85 0 - >85, 20_10 10 -> 13 0 -> 13 20 10-> 0.6656,10 0->0.76655,8
+#else
 #define PARAM_H { "h", 0, 3, 1.5 }
+//#define PARAM_H { "h", -1.5, 3, 1}
+#endif
+
 #define PARAM_T1 { "t1", -5, -1, -3 } 
 #define PARAM_T2 { "t2", -5, -1, -3 } 
 #define PARAM_A { "a", 0, 1, 0.5 }
 
 
-//	Loads the paremeter information associated with each of the models and sets the value to a random value within the allowed
+//	Loads the parameter information associated with each of the models and sets the value to a random value within the allowed
 //	range for the parameter. 
 paramDescriptionSet GetModelParams(modelType model,dataVec * defaults, VEC_DATA_TYPE offset)
 {
@@ -134,8 +146,10 @@ paramDescriptionSet GetModelParams(modelType model,dataVec * defaults, VEC_DATA_
 
 	switch (model)
 	{
-	case noModelSpecified:
-		break;
+#ifdef SELECT_BY_LL
+	case findBestModel:
+	case noModelSpecified:	break;
+#endif
 	case ModelB: case ModelD: case ModelE:
 		params = { PARAM_D   // average length of fragments
 			, PARAM_H   // the minimum length of fragmenation
@@ -162,7 +176,6 @@ paramDescriptionSet GetModelParams(modelType model,dataVec * defaults, VEC_DATA_
 			, PARAM_A // alpha strength of model B
 		};
 		break;
-	case findBestModel:
 	case none:
 		break;
 	};
@@ -306,7 +319,11 @@ The original MATLAB code is shown in comments
 double FLL_ModelA(const dataVec & param, const mcmcGeneData & data)
 {
 	double d = pow(10,param[0]);
-	double h = pow(10,param[1]);
+#ifdef ABS_H_PARAM
+	double h = param[1];
+#else
+	double h = pow(10, param[1]);
+#endif
 
 	const vector<int> & geneIndex = data.geneIndex;
 	double LogL = 0;
@@ -355,7 +372,11 @@ double FLL_ModelB(const dataVec & param, const mcmcGeneData & data)
 {
 
 	double d = pow(10,param[0]);
-	double h = pow(10,param[1]);
+#ifdef ABS_H_PARAM
+	double h = param[1];
+#else
+	double h = pow(10, param[1]);
+#endif
 	double t1 = pow(10,param[2]);
 	double t2 = pow(10,param[3]);
 
@@ -368,13 +389,13 @@ double FLL_ModelB(const dataVec & param, const mcmcGeneData & data)
 //	 norm =  (2*h<l).*(t1.*(exp(-2*h*(t1+t2))-exp(-l*(t1+t2)))+t2*(t1+t2).*(l-2*h).*exp(-l*(t1+t2)))/(t1 + t2)^2 + ...
 //        (exp(-l*(t1+t2)).*(l.*t2^2+l.*t2*t1-t1)+t1)/(t1 + t2)^2/d;
 #ifdef VECTOR_MATHS
-	const dataVec & x = data.fragData;
-	const dataVec l = data.geneLengths.expand(geneIndex);
-	const dataVec freq_l = data.geneFrequencies.expand(geneIndex);
-	dataVec f_frag = (x> h)*(x < l-h)/(t1+ t2) * (t1*exp(-2*l*(t1+t2)+(t1+t2)*(l-h+x)) + t2*exp(-l*(t1+t2))) + 
-	       1./(t1+ t2) * (t1*exp(-2*l*(t1+t2)+(t1+t2)*(l+x)) + t2*exp(-l*(t1+t2)))/d;
-	dataVec norm =  (2*h<l)*(t1*(exp(-2*h*(t1+t2))-exp(-l*(t1+t2)))+t2*(t1+t2)*(l-2*h)*exp(-l*(t1+t2)))/((t1 + t2) * (t1 + t2)) +
-	        (exp(-l*(t1+t2))*((l*t2) *(l*t2)+l*t2*t1-t1)+t1)/(t1 + t2)^2/d;
+		const dataVec & x = data.fragData;
+		const dataVec l = data.geneLengths.expand(geneIndex);
+		const dataVec freq_l = data.geneFrequencies.expand(geneIndex);
+		dataVec f_frag = (x > h)*(x < l - h) / (t1 + t2) * (t1*exp(-2 * l*(t1 + t2) + (t1 + t2)*(l - h + x)) + t2*exp(-l*(t1 + t2))) +
+			1. / (t1 + t2) * (t1*exp(-2 * l*(t1 + t2) + (t1 + t2)*(l + x)) + t2*exp(-l*(t1 + t2))) / d;
+		dataVec norm = (2 * h < l)*(t1*(exp(-2 * h*(t1 + t2)) - exp(-l*(t1 + t2))) + t2*(t1 + t2)*(l - 2 * h)*exp(-l*(t1 + t2))) / ((t1 + t2) * (t1 + t2)) +
+			(exp(-l*(t1 + t2))*((l*t2*t2) + l*t2*t1 - t1) + t1) / ((t1 + t2) * (t1 + t2)) / d;
 	LogL = sum(log(f_frag / norm) / freq_l);
 #else
 	double last_l = 0;
@@ -422,7 +443,11 @@ double FLL_ModelC(const dataVec & param, const mcmcGeneData & data)
 	//	function [LogL] = FLL_Deng(param, data)
 
 	double d = pow(10,param[0]);
-	double h = pow(10,param[1]);
+#ifdef ABS_H_PARAM
+	double h = param[1];
+#else
+	double h = pow(10, param[1]);
+#endif
 	double t2 = pow(10,param[2]);
 
 	const vector<int> & geneIndex = data.geneIndex;
@@ -471,7 +496,11 @@ double FLL_ModelC(const dataVec & param, const mcmcGeneData & data)
 double FLL_ModelD(const dataVec & param, const mcmcGeneData & data)
 {
 	double d = pow(10,param[0]);
-	double h = pow(10,param[1]);
+#ifdef ABS_H_PARAM
+	double h = param[1];
+#else
+	double h = pow(10, param[1]);
+#endif
 	double t1 = pow(10,param[2]);
 	double t2 = pow(10,param[3]);
 	double LogL = 0;
@@ -523,7 +552,11 @@ double FLL_ModelD(const dataVec & param, const mcmcGeneData & data)
 double FLL_ModelE(const dataVec & param, const mcmcGeneData & data)
 {
 	double d = pow(10,param[0]);
-	double h = pow(10,param[1]);
+#ifdef ABS_H_PARAM
+	double h = param[1];
+#else
+	double h = pow(10, param[1]);
+#endif
 	double t1 = pow(10,param[2]);
 	double t2 = pow(10,param[3]);
 
@@ -548,35 +581,35 @@ double FLL_ModelE(const dataVec & param, const mcmcGeneData & data)
 		double last_l = 0;
 		double norm = 0;
 
-		double t1_p_t2 = t1 + t2;
-		double t1_p_t2_sq = t1_p_t2*t1_p_t2;
-		double exp_m2_h_t1_p_t2 = exp(-2 * h*t1_p_t2);
+	double t1_p_t2 = t1 + t2;
+	double t1_p_t2_sq = t1_p_t2*t1_p_t2;
+	double exp_m2_h_t1_p_t2 = exp(-2 * h*t1_p_t2);
 
-		for (size_t i = 0; i < data.fragData.size(); i++)
+	for (size_t i = 0; i < data.fragData.size(); i++)
+	{
+		const VEC_DATA_TYPE & x = data.fragData[i];
+		const VEC_DATA_TYPE & l = data.geneLengths[geneIndex[i]];
+		const VEC_DATA_TYPE & freq_l = data.geneFrequencies[geneIndex[i]];
+
+		double	f_frag = 1 / t1 / t1_p_t2 *(1 - exp(-x*t1_p_t2) - exp(-(l - x)*t1) + exp(-l*t1 - x*t2)) / d;
+
+		if ((x > h) && (x < l - h))
+			f_frag += (exp_m2_h_t1_p_t2 - exp(-(x + h)*t1_p_t2) - exp(-t1*h - 2 * h*t2 - (l - x)*t1) + exp(-h*t2 - l*t1 - x*t2)) / t1 / t1_p_t2;
+
+		if (f_frag == 0)
+			return 1E20;
+
+		if (l != last_l)
 		{
-			const VEC_DATA_TYPE & x = data.fragData[i];
-			const VEC_DATA_TYPE & l = data.geneLengths[geneIndex[i]];
-			const VEC_DATA_TYPE & freq_l = data.geneFrequencies[geneIndex[i]];
+			norm = (l - 1 / t1_p_t2 - 1 / t1 - t1 / t2 / t1_p_t2*exp(-l*t1_p_t2) + t1_p_t2 / t1 / t2*exp(-l*t1)) / t1_p_t2 / t1 / d;
 
-			double	f_frag = 1 / t1 / t1_p_t2 *(1 - exp(-x*t1_p_t2) - exp(-(l - x)*t1) + exp(-l*t1 - x*t2)) / d;
+			if (2 * h < l)
+				norm += (exp(-l*t1 - 2 * h*t2)*t1_p_t2_sq - exp(-l*t1_p_t2)*t1*t1 + t1*t2*exp(-2 * h*t1_p_t2)*(l*t2 - 2 * h*t1 - 2 * h*t2 + l*t1 - t2 / t1 - 2)) / (t1_p_t2*t1_p_t2*t1*t1*t2);
 
-			if ((x > h) && (x < l - h))
-				f_frag += (exp_m2_h_t1_p_t2 - exp(-(x + h)*t1_p_t2) - exp(-t1*h - 2 * h*t2 - (l - x)*t1) + exp(-h*t2 - l*t1 - x*t2)) / t1 / t1_p_t2;
-
-			if (f_frag == 0)
-				return 1E20;
-
-			if (l != last_l)
-			{
-				norm = (l - 1 / t1_p_t2 - 1 / t1 - t1 / t2 / t1_p_t2*exp(-l*t1_p_t2) + t1_p_t2 / t1 / t2*exp(-l*t1)) / t1_p_t2 / t1 / d;
-
-				if (2 * h < l)
-					norm += (exp(-l*t1 - 2 * h*t2)*t1_p_t2_sq - exp(-l*t1_p_t2)*t1*t1 + t1*t2*exp(-2 * h*t1_p_t2)*(l*t2 - 2 * h*t1 - 2 * h*t2 + l*t1 - t2 / t1 - 2)) / (t1_p_t2*t1_p_t2*t1*t1*t2);
-
-				last_l = l;
-			}
-		LogL += log(f_frag/norm)/freq_l;
+			last_l = l;
 		}
+		LogL += log(f_frag / norm) / freq_l;
+	}
 #endif
 	LogL = -2 * LogL;
 	return LogL;
@@ -586,7 +619,11 @@ double FLL_ModelBD(const dataVec & param, const mcmcGeneData & data)
 {
 
 	double d = pow(10,param[0]);
-	double h = pow(10,param[1]);
+#ifdef ABS_H_PARAM
+	double h = param[1];
+#else
+	double h = pow(10, param[1]);
+#endif
 	double t1 = pow(10,param[2]);
 	double t2 = pow(10,param[3]);
 	double a = param[4];
@@ -675,11 +712,19 @@ double FLL_ModelBD(const dataVec & param, const mcmcGeneData & data)
 void getBias(modelType m,dataVec & params,const dataVec & l, dataVec & bias)
 {
 	double d = pow(10, params[0]);
+#ifdef ABS_H_PARAM
+	double h = params[1];
+#else
 	double h = pow(10, params[1]);
+#endif
 	double t1, t2, a;
 	switch (m)
 	{
+#ifdef SELECT_BY_LL
 	case noModelSpecified:	//This should not happen
+	case findBestModel:
+		break;
+#endif
 	case ModelA:
 		break;
 	case ModelB:
@@ -697,16 +742,18 @@ void getBias(modelType m,dataVec & params,const dataVec & l, dataVec & bias)
 		t2 = pow(10, params[3]);
 		a = params[4];
 		break;
-	case findBestModel:
-		break;
+	case none:;
 	}
 
 	bias.resize(l.size());
 
 	switch (m)
 	{
+#ifdef SELECT_BY_LL
 	case noModelSpecified:
+	case findBestModel:
 		break;
+#endif
 	case ModelA:
 		bias = (2 * h < l)*(l - 2 * h) + l / d;
 		break;
@@ -744,9 +791,95 @@ void getBias(modelType m,dataVec & params,const dataVec & l, dataVec & bias)
 			(1 - exp(-l*(t1 + t2))) / (t1 + t2) / d);
 		break;
 	}
-	case findBestModel:
-		break;
+	case none:;
 	}
 	bias = bias * l[0] / bias[0];
 	bias /= l;
+}
+
+dataVec getDistribution(modelType m, size_t length, size_t points, dataVec & params)
+{
+
+	double d = pow(10, params[0]);
+#ifdef ABS_H_PARAM
+	double h = params[1];
+#else
+	double h = pow(10, params[1]);
+#endif
+	double t1, t2, a;
+	switch (m)
+	{
+#ifdef SELECT_BY_LL
+	case findBestModel:
+	case noModelSpecified:	//This should not happen
+		break;
+#endif
+	case ModelA:
+		break;
+	case ModelB:
+	case ModelD:
+	case ModelE:
+		t1 = pow(10, params[2]);
+		t2 = pow(10, params[3]);
+		break;
+	case ModelC:
+		t1 = 0;
+		t2 = pow(10, params[2]);
+		break;
+	case ModelBD:
+		t1 = pow(10, params[2]);
+		t2 = pow(10, params[3]);
+		a = params[4];
+		break;
+	case none:;
+	}
+
+	
+	VEC_DATA_TYPE l = length;
+	dataVec x(points), dist(points), dist2(points);
+	for (size_t j = 0; j < points; j++)
+		x[j] = (l / points) * (j + 0.5);
+
+	//	This is all vector arithmetic, as supported by DataVec
+	switch (m)
+	{
+#ifdef SELECT_BY_LL
+	case noModelSpecified:	//This should not happen
+	case findBestModel:
+		break;
+#endif
+	case ModelA:
+		dist = ((x > h) * (x < (l - h)) + 1 / d);
+		break;
+	case ModelB:
+	case ModelD:
+	case ModelBD:
+	{
+		if ((m == ModelB) || (m == ModelBD))
+		{
+			dist = (x > h)*(x < l - h) / (t1 + t2) * (t1*exp(-2 * l*(t1 + t2) + (t1 + t2)*(l - h + x)) + t2*exp(-l*(t1 + t2))) +
+				1 / (t1 + t2) * (t1 *exp(-2 * l*(t1 + t2) + (t1 + t2)*(l + x)) + t2*exp(-l*(t1 + t2))) / d;
+		}
+		if ((m == ModelD) || (m == ModelBD))
+		{
+			dist2 = (x > h)*(x < l - h) / (t1 + t2) * (t1*exp(-t1*(l - x) - 2 * t2*h - t1*h) + t2*exp(-t1*l - t2*(x + h))) +
+				1 / (t1 + t2) * (t1*exp(-t1*(l - x)) + t2*exp(-t1*l - t2*(x))) / d;
+		}
+		if (m == ModelBD)
+			dist = a * dist + (1 - a) * dist2;
+		else if (m == ModelD)
+			swap(dist2, dist);
+	}
+	break;
+	case ModelE:
+		dist = (x> h)*(x < l-h)/t1/(t1+ t2)*(exp(-2*h*(t1+ t2))-exp(-(h +x)*(t1+t2)) - exp(-t1*h-2*h*t2-(l-x)*t1) + exp(-h*t2-l*t1-x*t2)) + 
+			     1/t1/(t1+ t2) *(1 - exp(-x*(t1+t2)) - exp(-(l-x)*t1) + exp(-l*t1-x*t2))/d;
+		break;
+	case ModelC:
+		dist = (x> h)*(x < l-h)*exp(-t2*(x+h)) +  exp(-t2*(x))/d;
+		break;
+	case none:;
+	}
+	dist.normalise();
+	return dist;
 }
